@@ -19,3 +19,5 @@ return (url = '/rpc/auth', options = {}) ->
 
     else
       continue()
+
+    return

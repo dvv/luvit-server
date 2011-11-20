@@ -9,3 +9,4 @@ return (options = {}) ->
     -- FIXME: delayed until JSON and urlencoded codecs are
     req.body = {}
     continue()
+    return

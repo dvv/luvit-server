@@ -50,3 +50,4 @@ Response.prototype.render = (template, data = {}, options = {}) =>
         ['Content-Type']: 'text/html; charset=UTF-8'
         ['Content-Length']: #html
       }
+  return

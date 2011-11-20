@@ -1,7 +1,9 @@
 ROOT=$(shell pwd)
-LUA_DIR=$(ROOT)/build/luvit/deps/luajit/src
+#LUA_DIR=$(ROOT)/build/luvit/deps/luajit/src
+LUA_DIR=$(ROOT)/../luvit/deps/luajit/src
 
-all: luvit json crypto uuid lib
+#all: luvit json crypto uuid lib
+all: json crypto uuid lib
 
 luvit: build/luvit/build/luvit
 
@@ -19,16 +21,18 @@ build/lua-cjson/cjson.so: build/lua-cjson
 	LUA_INCLUDE_DIR=$(LUA_DIR) make -C $^
 
 build/lua-cjson:
+	mkdir -p build
 	wget http://www.kyne.com.au/~mark/software/lua-cjson-1.0.3.tar.gz -O - | tar -xzpf - -C build
 	mv build/lua-cjson-* $@
 
 crypto: build/lua-openssl/openssl.so
 
 build/lua-openssl/openssl.so: build/lua-openssl
-	#sed -i 's,$$(CC) -c -o $$@ $$?,$$(CC) -c -I$(ROOT)/build/luvit/deps/luajit/src -o $$@ $$?,' build/lua-openssl/makefile
-	make INCS=-I$(ROOT)/build/luvit/deps/luajit/src -C $^
+	#sed -i 's,$$(CC) -c -o $$@ $$?,$$(CC) -c -I$(LUA_DIR) -o $$@ $$?,' build/lua-openssl/makefile
+	make INCS=-I$(LUA_DIR) -C $^
 
 build/lua-openssl:
+	mkdir -p build
 	wget http://github.com/zhaozg/lua-openssl/tarball/master -O - | tar -xzpf - -C build
 	mv build/zhaozg-lua-* $@
 

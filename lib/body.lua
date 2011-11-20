@@ -4,6 +4,7 @@ return function(options)
   end
   return function(req, res, continue)
     req.body = { }
-    return continue()
+    continue()
+    return 
   end
 end

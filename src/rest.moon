@@ -167,3 +167,4 @@ return (mount = '/rpc/', options = {}) ->
     Table.insert params, respond
     --p('RPC?', params)
     resource[method] unpack params
+    return

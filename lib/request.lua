@@ -11,4 +11,5 @@ Request.prototype.parse_cookies = function(self)
       end
     end
   end
+  return 
 end

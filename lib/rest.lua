@@ -149,6 +149,7 @@ return function(mount, options)
       Table.insert(params, 1, context)
     end
     Table.insert(params, respond)
-    return resource[method](unpack(params))
+    resource[method](unpack(params))
+    return 
   end
 end

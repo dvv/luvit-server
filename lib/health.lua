@@ -4,9 +4,10 @@ return function(url)
   end
   return function(req, res, continue)
     if req.url == url then
-      return res:send(200, nil, { })
+      res:send(200, nil, { })
     else
-      return continue()
+      continue()
     end
+    return 
   end
 end

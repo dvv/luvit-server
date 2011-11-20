@@ -13,3 +13,4 @@ return (url = '/haproxy?monitor') ->
       res\send 200, nil, {}
     else
       continue()
+    return

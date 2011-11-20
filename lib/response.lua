@@ -40,7 +40,7 @@ Response.prototype.render = function(self, template, data, options)
   if options == nil then
     options = { }
   end
-  return FS.read_file(template, function(err, text)
+  FS.read_file(template, function(err, text)
     if err then
       return self:serve_not_found()
     else
@@ -51,4 +51,5 @@ Response.prototype.render = function(self, template, data, options)
       })
     end
   end)
+  return 
 end
