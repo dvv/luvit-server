@@ -22,7 +22,7 @@ build/lua-cjson/cjson.so: build/lua-cjson
 
 build/lua-cjson:
 	mkdir -p build
-	wget http://www.kyne.com.au/~mark/software/lua-cjson-1.0.3.tar.gz -O - | tar -xzpf - -C build
+	wget http://www.kyne.com.au/~mark/software/lua-cjson-1.0.4.tar.gz -O - | tar -xzpf - -C build
 	mv build/lua-cjson-* $@
 
 crypto: build/lua-openssl/openssl.so
@@ -44,3 +44,4 @@ lib:
 	-which moonc && rm -fr lib && ( cd src ; moonc -t ../lib * )
 
 .PHONY: all lib crypto json uuid
+.SILENT:
