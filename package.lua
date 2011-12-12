@@ -1,7 +1,7 @@
 return {
   name = 'server',
   version = '0.0.1',
-  description = "Boilerplate for webs server in Luvit",
+  description = "Boilerplate for web server in Luvit",
   author = "Vladimir Dronnikov <dronnikov@gmail.com>",
   dependencies = {
     json    = "https://github.com/luvit/json/zipball/master",
