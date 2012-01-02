@@ -4,8 +4,7 @@
 
 Request = require 'request'
 
-String = require 'string'
-import match, gmatch from String
+import match, gmatch from require 'string'
 
 --
 -- parse request cookies

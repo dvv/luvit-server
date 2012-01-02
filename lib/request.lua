@@ -1,6 +1,9 @@
 local Request = require('request')
-local String = require('string')
-local match, gmatch = String.match, String.gmatch
+local match, gmatch
+do
+  local _table_0 = require('string')
+  match, gmatch = _table_0.match, _table_0.gmatch
+end
 Request.prototype.parse_cookies = function(self)
   self.cookies = { }
   if self.headers.cookie then

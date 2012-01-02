@@ -151,4 +151,4 @@ _G.JSON = require 'json'
 if process.env.DEBUG == '1'
   _G.d = (...) -> debug('DEBUG', ...)
 else
-  _G.d = () -> 
+  _G.d = () ->

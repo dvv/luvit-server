@@ -2,14 +2,15 @@
 -- ReST resource routing
 --
 
-import encode, decode from JSON
+import sub, url_decode from require 'string'
+import encode, decode from require 'json'
 
 return (mount = '/rpc/', options = {}) ->
 
   parseUrl = require('url').parse
 
   -- mount should end with '/'
-  mount = mount .. '/' if String.sub(mount, #mount) != '/'
+  mount = mount .. '/' if sub(mount, #mount) != '/'
   mlen = #mount
 
   -- whether PUT /Foo/_new means POST /Foo
@@ -23,16 +24,16 @@ return (mount = '/rpc/', options = {}) ->
     req.uri = parseUrl(req.url) if not req.uri
     -- none of our business unless url starts with `mount`
     path = req.uri.pathname
-    return continue() if String.sub(path, 1, mlen) != mount
+    return continue() if sub(path, 1, mlen) != mount
 
     -- split pathname into resource name and id
     resource = nil
     id = nil
     path\sub(mlen + 1)\gsub '[^/]+', (part) ->
       if not resource
-        resource = String.url_decode part
+        resource = url_decode part
       elseif not id
-        id = String.url_decode part
+        id = url_decode part
       --p('parts', resource, id)
 
     --

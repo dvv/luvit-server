@@ -4,7 +4,7 @@
 
 import date, time from require 'os'
 import get_cipher, get_digest from require 'crypto'
-import encode, decode from JSON
+import encode, decode from require 'json'
 
 module = {}
 

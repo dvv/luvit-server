@@ -1,4 +1,9 @@
 local UV = require('uv')
+local format
+do
+  local _table_0 = require('string')
+  format = _table_0.format
+end
 local get_type
 do
   local _table_0 = require('mime')
@@ -92,7 +97,7 @@ return function(mount, root, options)
         return self:serve_invalid_range(file.size)
       end
       headers['Content-Length'] = stop - start + 1
-      headers['Content-Range'] = String.format('bytes=%d-%d/%d', start, stop, size)
+      headers['Content-Range'] = format('bytes=%d-%d/%d', start, stop, size)
       self:write_head(206, headers)
     else
       self:write_head(200, headers)

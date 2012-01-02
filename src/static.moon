@@ -3,6 +3,7 @@
 --
 
 UV = require 'uv'
+import format from require 'string'
 import get_type from require 'mime'
 import stat, create_read_stream from require 'fs'
 import date from require 'os'
@@ -89,7 +90,7 @@ return (mount, root, options = {}) ->
       -- adjust Content-Length:
       headers['Content-Length'] = stop - start + 1
       -- append Content-Range:
-      headers['Content-Range'] = String.format('bytes=%d-%d/%d', start, stop, size)
+      headers['Content-Range'] = format('bytes=%d-%d/%d', start, stop, size)
       @write_head 206, headers
     else
       @write_head 200, headers

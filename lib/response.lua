@@ -42,14 +42,15 @@ Response.prototype.render = function(self, template, data, options)
   end
   FS.read_file(template, function(err, text)
     if err then
-      return self:serve_not_found()
+      self:serve_not_found()
     else
       local html = (text % data)
-      return self:send(200, html, {
+      self:send(200, html, {
         ['Content-Type'] = 'text/html; charset=UTF-8',
         ['Content-Length'] = #html
       })
     end
+    return 
   end)
   return 
 end

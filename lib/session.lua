@@ -8,7 +8,11 @@ do
   local _table_0 = require('crypto')
   get_cipher, get_digest = _table_0.get_cipher, _table_0.get_digest
 end
-local encode, decode = JSON.encode, JSON.decode
+local encode, decode
+do
+  local _table_0 = require('json')
+  encode, decode = _table_0.encode, _table_0.decode
+end
 local module = { }
 local expires_in
 expires_in = function(ttl)

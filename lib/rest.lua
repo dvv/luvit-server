@@ -1,4 +1,13 @@
-local encode, decode = JSON.encode, JSON.decode
+local sub, url_decode
+do
+  local _table_0 = require('string')
+  sub, url_decode = _table_0.sub, _table_0.url_decode
+end
+local encode, decode
+do
+  local _table_0 = require('json')
+  encode, decode = _table_0.encode, _table_0.decode
+end
 return function(mount, options)
   if mount == nil then
     mount = '/rpc/'
@@ -7,7 +16,7 @@ return function(mount, options)
     options = { }
   end
   local parseUrl = require('url').parse
-  if String.sub(mount, #mount) ~= '/' then
+  if sub(mount, #mount) ~= '/' then
     mount = mount .. '/'
   end
   local mlen = #mount
@@ -17,16 +26,16 @@ return function(mount, options)
       req.uri = parseUrl(req.url)
     end
     local path = req.uri.pathname
-    if String.sub(path, 1, mlen) ~= mount then
+    if sub(path, 1, mlen) ~= mount then
       return continue()
     end
     local resource = nil
     local id = nil
     path:sub(mlen + 1):gsub('[^/]+', function(part)
       if not resource then
-        resource = String.url_decode(part)
+        resource = url_decode(part)
       elseif not id then
-        id = String.url_decode(part)
+        id = url_decode(part)
       end
     end)
     local verb = req.headers['X-HTTP-Method-Override'] or req.method
