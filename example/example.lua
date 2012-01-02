@@ -1,4 +1,4 @@
-local Server = require('./')
+local Server = require('../')
 
 --[[
  *

@@ -2,4 +2,4 @@
 
 #sudo ulimit -n 16384
 (cd src ; moonc -t ../lib * )
-DEBUG=1 exec luvit example.lua
+DEBUG=1 exec luvit example/example.lua

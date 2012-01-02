@@ -2,27 +2,12 @@
 -- Provide req.session and user capabilities (req.context)
 --
 
+import sub, match, format from require 'string'
 import date, time from require 'os'
-import get_cipher, get_digest from require 'crypto'
+import encrypt, uncrypt, sign from require 'crypto'
 import encode, decode from require 'json'
 
-module = {}
-
 expires_in = (ttl) -> date '%c', time() + ttl
-
-sign = (secret, data) ->
-  digest = get_digest 'sha1', secret
-  mdc = digest\init()
-  mdc\update data
-  String.tohex mdc\final()
-
-encrypt = (secret, data) ->
-  cipher = get_cipher 'aes192'
-  String.tohex cipher\encrypt data, secret
-
-uncrypt = (secret, data) ->
-  cipher = get_cipher 'aes192'
-  cipher\decrypt String.fromhex(data), secret
 
 serialize = (secret, obj) ->
   str = encode obj
@@ -34,19 +19,20 @@ serialize = (secret, obj) ->
   result
 
 deserialize = (secret, ttl, str) ->
-  hmac_signature = String.sub str, 1, 40
-  timestamp = tonumber String.sub(str, 41, 50), 10
-  data = String.sub str, 51
-  --p(DEC, hmac_signature, timestamp, data)
+  hmac_signature = sub str, 1, 40
+  timestamp = tonumber sub(str, 41, 50), 10
+  data = sub str, 51
+  p(DEC, hmac_signature, timestamp, data)
   hmac_sig = sign secret, timestamp .. data
   return nil if hmac_signature != hmac_sig or timestamp + ttl <= time()
   data = uncrypt secret, data
   decode data
 
-module.read_session = (key, secret, ttl, req) ->
+read_session = (key, secret, ttl, req) ->
   cookie = type(req) == 'string' and req or req.headers.cookie
+  --d(cookie)
   if cookie
-    cookie = String.match cookie, '%s*;*%s*' .. key .. '=(%w*)'
+    cookie = match cookie, '%s*;*%s*' .. key .. '=(%w*)'
     if cookie and cookie != ''
       --d('raw read', cookie)
       return deserialize secret, ttl, cookie
@@ -71,14 +57,14 @@ return (options = {}) ->
   -- defaults
   key = options.key or 'sid'
   ttl = options.ttl or 15 * 24 * 60 * 60 * 1000
-  secret = options.secret --or 'change-me-in-production'
+  secret = options.secret
   context = options.context or {}
 
   -- handler
   return (req, res, continue) ->
 
     -- read session data from request and store it in req.session
-    req.session = module.read_session key, secret, ttl, req
+    req.session = read_session key, secret, ttl, req
 
     -- proxy write_head to add cookie to response
     -- TODO: res.req = req ; then it's possible to avoid making this
@@ -88,9 +74,9 @@ return (options = {}) ->
       cookie = nil
       if not req.session
         if req.headers.cookie
-          cookie = String.format '%s=; expires=; httponly; path=/', key, expires_in(0)
+          cookie = format '%s=; expires=; httponly; path=/', key, expires_in(0)
       else
-        cookie = String.format '%s=%s; expires=; httponly; path=/', key, serialize(secret, req.session), expires_in(ttl)
+        cookie = format '%s=%s; expires=; httponly; path=/', key, serialize(secret, req.session), expires_in(ttl)
       -- Set-Cookie
       -- FIXME: support multiple Set-Cookie:
       if cookie

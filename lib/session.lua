@@ -1,39 +1,26 @@
+local sub, match, format
+do
+  local _table_0 = require('string')
+  sub, match, format = _table_0.sub, _table_0.match, _table_0.format
+end
 local date, time
 do
   local _table_0 = require('os')
   date, time = _table_0.date, _table_0.time
 end
-local get_cipher, get_digest
+local encrypt, uncrypt, sign
 do
   local _table_0 = require('crypto')
-  get_cipher, get_digest = _table_0.get_cipher, _table_0.get_digest
+  encrypt, uncrypt, sign = _table_0.encrypt, _table_0.uncrypt, _table_0.sign
 end
 local encode, decode
 do
   local _table_0 = require('json')
   encode, decode = _table_0.encode, _table_0.decode
 end
-local module = { }
 local expires_in
 expires_in = function(ttl)
   return date('%c', time() + ttl)
-end
-local sign
-sign = function(secret, data)
-  local digest = get_digest('sha1', secret)
-  local mdc = digest:init()
-  mdc:update(data)
-  return String.tohex(mdc:final())
-end
-local encrypt
-encrypt = function(secret, data)
-  local cipher = get_cipher('aes192')
-  return String.tohex(cipher:encrypt(data, secret))
-end
-local uncrypt
-uncrypt = function(secret, data)
-  local cipher = get_cipher('aes192')
-  return cipher:decrypt(String.fromhex(data), secret)
 end
 local serialize
 serialize = function(secret, obj)
@@ -46,9 +33,10 @@ serialize = function(secret, obj)
 end
 local deserialize
 deserialize = function(secret, ttl, str)
-  local hmac_signature = String.sub(str, 1, 40)
-  local timestamp = tonumber(String.sub(str, 41, 50), 10)
-  local data = String.sub(str, 51)
+  local hmac_signature = sub(str, 1, 40)
+  local timestamp = tonumber(sub(str, 41, 50), 10)
+  local data = sub(str, 51)
+  p(DEC, hmac_signature, timestamp, data)
   local hmac_sig = sign(secret, timestamp .. data)
   if hmac_signature ~= hmac_sig or timestamp + ttl <= time() then
     return nil
@@ -56,10 +44,11 @@ deserialize = function(secret, ttl, str)
   data = uncrypt(secret, data)
   return decode(data)
 end
-module.read_session = function(key, secret, ttl, req)
+local read_session
+read_session = function(key, secret, ttl, req)
   local cookie = type(req) == 'string' and req or req.headers.cookie
   if cookie then
-    cookie = String.match(cookie, '%s*;*%s*' .. key .. '=(%w*)')
+    cookie = match(cookie, '%s*;*%s*' .. key .. '=(%w*)')
     if cookie and cookie ~= '' then
       return deserialize(secret, ttl, cookie)
     end
@@ -96,16 +85,16 @@ return function(options)
   local secret = options.secret
   local context = options.context or { }
   return function(req, res, continue)
-    req.session = module.read_session(key, secret, ttl, req)
+    req.session = read_session(key, secret, ttl, req)
     local _write_head = res.write_head
     res.write_head = function(self, status, headers)
       local cookie = nil
       if not req.session then
         if req.headers.cookie then
-          cookie = String.format('%s=; expires=; httponly; path=/', key, expires_in(0))
+          cookie = format('%s=; expires=; httponly; path=/', key, expires_in(0))
         end
       else
-        cookie = String.format('%s=%s; expires=; httponly; path=/', key, serialize(secret, req.session), expires_in(ttl))
+        cookie = format('%s=%s; expires=; httponly; path=/', key, serialize(secret, req.session), expires_in(ttl))
       end
       if cookie then
         if not headers then
