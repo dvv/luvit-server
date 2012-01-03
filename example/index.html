@@ -1,19 +1,24 @@
 <!doctype html>
-<html><head>
-  <link rel="icon" type="image/png" href="favicon.png"/>
-  <!--link rel="stylesheet" media="all" href="less.css"/-->
+<html>
+<head>
+  <meta name="charset" content="utf-8"/>
+  <title>#{title}</title>
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1"/>
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
-  <script src="public/jquery.min.js"></script>
-  <script>
-$(function(){
-
-});
-  </script>
+  <link rel="shortcut icon" type="image/vnd.microsoft.icon" href="public/favicon.ico"/>
+  <link rel="stylesheet" media="all" href="public/bootstrap.css"/>
+  <script src="public/modernizr.min.js"></script>
 </head>
 <body>
 <h2><a href="https://github.com/luvit/server">Luvit Server</a> example</h2>
 <h4><a style="text-align: right;" href="/rpc/auth">Perform auth to toggle sid cookie</a></h4>
 <p id="hello">Hello, #{uid|Sunny World}!</p>
-<p id="caps"></p>
+<script src="public/jquery.min.js"></script>
+<script src="public/bootstrap.js"></script>
+<script>
+$(function(){
+
+});
+</script>
 </body>
 </html>
