@@ -1,5 +1,4 @@
 #!/bin/sh
 
-#sudo ulimit -n 16384
-(cd src ; moonc -t ../lib * )
+make
 DEBUG=1 exec luvit example/example.lua

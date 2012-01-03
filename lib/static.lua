@@ -19,36 +19,45 @@ do
   local _table_0 = require('os')
   date = _table_0.date
 end
+local resolve
+do
+  local _table_0 = require('path')
+  resolve = _table_0.resolve
+end
 local CHUNK_SIZE = 4096
 local noop
 noop = function() end
 local stream_file
 stream_file = function(path, offset, size, progress, callback)
-  return UV.fs_open(path, 'r', '0666', function(err, fd)
+  UV.fs_open(path, 'r', '0666', function(err, fd)
     if err then
       return callback(err)
     end
     local readchunk
     readchunk = function()
       local chunk_size = size < CHUNK_SIZE and size or CHUNK_SIZE
-      return UV.fs_read(fd, offset, chunk_size, function(err, chunk)
+      UV.fs_read(fd, offset, chunk_size, function(err, chunk)
         if err or #chunk == 0 then
           callback(err)
-          return UV.fs_close(fd, noop)
+          UV.fs_close(fd, noop)
         else
           chunk_size = #chunk
           offset = offset + chunk_size
           size = size - chunk_size
           if progress then
-            return progress(chunk, readchunk)
+            progress(chunk, readchunk)
           else
-            return readchunk()
+            readchunk()
           end
         end
+        return 
       end)
+      return 
     end
-    return readchunk()
+    readchunk()
+    return 
   end)
+  return 
 end
 return function(mount, root, options)
   if options == nil then
@@ -69,19 +78,12 @@ return function(mount, root, options)
   local cache = { }
   local invalidate_cache_entry
   invalidate_cache_entry = function(status, event, path)
-    d("on_change", {
-      status = status,
-      event = event,
-      path = path
-    }, self)
     if cache[path] then
       cache[path].watch:close()
       cache[path] = nil
     end
+    return 
   end
-  local NUM1 = 0
-  local NUM2 = 0
-  local NUM3 = 0
   local serve
   serve = function(self, file, range, cache_it)
     local headers = extend({ }, file.headers)
@@ -103,9 +105,7 @@ return function(mount, root, options)
       self:write_head(200, headers)
     end
     if file.data then
-      return self:write(range and file.data.sub(start + 1, stop - start + 1) or file.data, function(...)
-        return self:finish()
-      end)
+      self:finish(range and file.data.sub(start + 1, stop - start + 1) or file.data)
     else
       if range then
         cache_it = false
@@ -117,39 +117,38 @@ return function(mount, root, options)
           parts[index] = chunk
           index = index + 1
         end
-        return self:write(chunk, cb)
+        self:write(chunk, cb)
+        return 
       end
       local eof
       eof = function(err)
         self:finish()
         if cache_it then
-          NUM2 = NUM2 + 1
-          d("cached", NUM2, {
-            path = filename,
-            headers = file.headers
-          })
-          file.data = Table.concat(parts, '')
+          file.data = join(parts, '')
         end
+        return 
       end
-      return stream_file(file.name, start, stop - start + 1, progress, eof)
+      stream_file(file.name, start, stop - start + 1, progress, eof)
     end
+    return 
   end
   return function(req, res, continue)
     local mount_found_at = req.url:find(mount)
     if req.method ~= 'GET' or mount_found_at ~= 1 then
       return continue()
     end
-    local filename = root .. req.uri.pathname:sub(mount_found_at + #mount)
+    local filename = resolve(root, req.uri.pathname:sub(mount_found_at + #mount))
     local file = cache[filename]
     if file and file.headers['Last-Modified'] == req.headers['if-modified-since'] then
       return res:serve_not_modified(file.headers)
     end
     if file then
-      return serve(res, file, req.headers.range, false)
+      serve(res, file, req.headers.range, false)
     else
-      return stat(filename, function(err, stat)
+      stat(filename, function(err, stat)
         if err then
-          return res:serve_not_found()
+          res:serve_not_found()
+          return 
         end
         file = {
           name = filename,
@@ -166,11 +165,11 @@ return function(mount, root, options)
         cache[filename] = file
         file.watch = UV.new_fs_watcher(filename)
         file.watch:set_handler('change', invalidate_cache_entry)
-        NUM1 = NUM1 + 1
-        d("stat", NUM1, file)
         local cache_it = options.is_cacheable and options.is_cacheable(file)
         return serve(res, file, req.headers.range, cache_it)
       end)
+      return 
     end
+    return 
   end
 end

@@ -5,12 +5,13 @@
 import sub, match, format from require 'string'
 import date, time from require 'os'
 import encrypt, uncrypt, sign from require 'crypto'
-import encode, decode from require 'json'
+import encode, decode, null from require 'json'
 
 expires_in = (ttl) -> date '%c', time() + ttl
 
 serialize = (secret, obj) ->
   str = encode obj
+  --p('SER', str)
   str_enc = encrypt secret, str
   timestamp = time()
   hmac_sig = sign secret, timestamp .. str_enc
@@ -22,11 +23,14 @@ deserialize = (secret, ttl, str) ->
   hmac_signature = sub str, 1, 40
   timestamp = tonumber sub(str, 41, 50), 10
   data = sub str, 51
-  p(DEC, hmac_signature, timestamp, data)
+  --d('DEC', hmac_signature, timestamp, data)
   hmac_sig = sign secret, timestamp .. data
   return nil if hmac_signature != hmac_sig or timestamp + ttl <= time()
   data = uncrypt secret, data
-  decode data
+  data = decode data
+  --d('DESER', data, data != data)
+  data = nil if data == null
+  data
 
 read_session = (key, secret, ttl, req) ->
   cookie = type(req) == 'string' and req or req.headers.cookie
@@ -37,16 +41,6 @@ read_session = (key, secret, ttl, req) ->
       --d('raw read', cookie)
       return deserialize secret, ttl, cookie
   nil
-
--- tests
-if false
-  secret = 'foo-bar-baz$'
-  obj = {a: {foo: 123, bar: "456"}, b: {1,2,nil,3}, c: false, d: 0}
-  ser = serialize secret, obj
-  p(ser)
-  deser = deserialize secret, 1, ser
-  -- N.B. nils are killed
-  p(deser, deser == obj)
 
 --
 -- we keep sessions safely in encrypted and signed cookies.
@@ -65,26 +59,22 @@ return (options = {}) ->
 
     -- read session data from request and store it in req.session
     req.session = read_session key, secret, ttl, req
+    --d('SESSION IN', req.session, req.headers.cookie)
 
-    -- proxy write_head to add cookie to response
-    -- TODO: res.req = req ; then it's possible to avoid making this
-    -- closure for each request
+    -- patch response to support writing cookies
     _write_head = res.write_head
-    res.write_head = (self, status, headers) ->
+    res.write_head = (self, code, headers, callback) ->
       cookie = nil
       if not req.session
         if req.headers.cookie
-          cookie = format '%s=; expires=; httponly; path=/', key, expires_in(0)
+          cookie = format '%s=;expires=%s;httponly;path=/', key, expires_in(0)
       else
-        cookie = format '%s=%s; expires=; httponly; path=/', key, serialize(secret, req.session), expires_in(ttl)
+        cookie = format '%s=%s;expires=%s;httponly;path=/', key, serialize(secret, req.session), expires_in(ttl)
       -- Set-Cookie
-      -- FIXME: support multiple Set-Cookie:
+      --p('SESSION OUT', req.session, cookie)
       if cookie
-        headers = {} if not headers
-        headers['Set-Cookie'] = cookie
-      -- call original method
-      --d('response with cookie', headers)
-      _write_head self, status, headers
+        self\add_header 'Set-Cookie', cookie
+      _write_head self, code, headers, callback
 
     -- always create a session if options.default_session specified
     if options.default_session and not req.session

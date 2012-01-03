@@ -7,6 +7,7 @@ import format from require 'string'
 import get_type from require 'mime'
 import stat, create_read_stream from require 'fs'
 import date from require 'os'
+import resolve from require 'path'
 
 --
 -- open file `path`, seek to `offset` octets from beginning and
@@ -33,7 +34,11 @@ stream_file = (path, offset, size, progress, callback) ->
             progress chunk, readchunk
           else
             readchunk()
+        return
+      return
     readchunk()
+    return
+  return
 
 --
 -- setup request handler
@@ -58,19 +63,11 @@ return (mount, root, options = {}) ->
 
   -- handler for 'change' event of all file watchers
   invalidate_cache_entry = (status, event, path) ->
-    d("on_change", {status: status, event: event, path: path}, self)
     -- invalidate cache entry and free the watcher
     if cache[path]
       cache[path].watch\close()
       cache[path] = nil
-
-  --
-  --debugging stuff. wanna know how many concurrent requests do some things
-  --before cache entry is set
-  --
-  NUM1 = 0
-  NUM2 = 0
-  NUM3 = 0
+    return
 
   -- given file, serve contents, honor Range: header
   serve = (file, range, cache_it) =>
@@ -95,12 +92,9 @@ return (mount, root, options = {}) ->
     else
       @write_head 200, headers
     -- serve from cache, if available
-    --d("serve", headers)
     if file.data
       -- FIXME: safe
-      @write range and file.data.sub(start + 1, stop - start + 1) or file.data, (...) ->
-      --d('write', ...)
-        @finish()
+      @finish range and file.data.sub(start + 1, stop - start + 1) or file.data
     -- otherwise stream and possibly cache
     else
       -- N.B. don't cache if range specified
@@ -113,14 +107,15 @@ return (mount, root, options = {}) ->
           index = index + 1
         -- FIXME: safe
         @write(chunk, cb)
+        return
       -- eof
       eof = (err) ->
         @finish()
         if cache_it
-          NUM2 = NUM2 + 1
-          d("cached", NUM2, {path: filename, headers: file.headers})
-          file.data = Table.concat parts, ''
+          file.data = join parts, ''
+        return
       stream_file file.name, start, stop - start + 1, progress, eof
+    return
 
   --
   -- request handler
@@ -134,7 +129,7 @@ return (mount, root, options = {}) ->
 
     -- map url to local filesystem filename
     -- TODO: Path.normalize(req.url)
-    filename = root .. req.uri.pathname\sub(mount_found_at + #mount)
+    filename = resolve root, req.uri.pathname\sub(mount_found_at + #mount)
 
     -- stream file, possibly caching the contents for later reuse
     file = cache[filename]
@@ -147,7 +142,9 @@ return (mount, root, options = {}) ->
       serve res, file, req.headers.range, false
     else
       stat filename, (err, stat) ->
-        return res\serve_not_found() if err
+        if err
+          res\serve_not_found()
+          return
         -- create cache entry, even for files which contents are not
         -- gonna be cached
         -- collect information on file
@@ -168,8 +165,8 @@ return (mount, root, options = {}) ->
         -- should any changes in this file occur, invalidate cache entry
         file.watch = UV.new_fs_watcher filename
         file.watch\set_handler 'change', invalidate_cache_entry
-        NUM1 = NUM1 + 1
-        d("stat", NUM1, file)
         -- shall we cache file contents?
         cache_it = options.is_cacheable and options.is_cacheable(file)
         serve res, file, req.headers.range, cache_it
+      return
+    return

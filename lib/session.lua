@@ -13,10 +13,10 @@ do
   local _table_0 = require('crypto')
   encrypt, uncrypt, sign = _table_0.encrypt, _table_0.uncrypt, _table_0.sign
 end
-local encode, decode
+local encode, decode, null
 do
   local _table_0 = require('json')
-  encode, decode = _table_0.encode, _table_0.decode
+  encode, decode, null = _table_0.encode, _table_0.decode, _table_0.null
 end
 local expires_in
 expires_in = function(ttl)
@@ -36,13 +36,16 @@ deserialize = function(secret, ttl, str)
   local hmac_signature = sub(str, 1, 40)
   local timestamp = tonumber(sub(str, 41, 50), 10)
   local data = sub(str, 51)
-  p(DEC, hmac_signature, timestamp, data)
   local hmac_sig = sign(secret, timestamp .. data)
   if hmac_signature ~= hmac_sig or timestamp + ttl <= time() then
     return nil
   end
   data = uncrypt(secret, data)
-  return decode(data)
+  data = decode(data)
+  if data == null then
+    data = nil
+  end
+  return data
 end
 local read_session
 read_session = function(key, secret, ttl, req)
@@ -55,27 +58,6 @@ read_session = function(key, secret, ttl, req)
   end
   return nil
 end
-if false then
-  local secret = 'foo-bar-baz$'
-  local obj = {
-    a = {
-      foo = 123,
-      bar = "456"
-    },
-    b = {
-      1,
-      2,
-      nil,
-      3
-    },
-    c = false,
-    d = 0
-  }
-  local ser = serialize(secret, obj)
-  p(ser)
-  local deser = deserialize(secret, 1, ser)
-  p(deser, deser == obj)
-end
 return function(options)
   if options == nil then
     options = { }
@@ -87,22 +69,19 @@ return function(options)
   return function(req, res, continue)
     req.session = read_session(key, secret, ttl, req)
     local _write_head = res.write_head
-    res.write_head = function(self, status, headers)
+    res.write_head = function(self, code, headers, callback)
       local cookie = nil
       if not req.session then
         if req.headers.cookie then
-          cookie = format('%s=; expires=; httponly; path=/', key, expires_in(0))
+          cookie = format('%s=;expires=%s;httponly;path=/', key, expires_in(0))
         end
       else
-        cookie = format('%s=%s; expires=; httponly; path=/', key, serialize(secret, req.session), expires_in(ttl))
+        cookie = format('%s=%s;expires=%s;httponly;path=/', key, serialize(secret, req.session), expires_in(ttl))
       end
       if cookie then
-        if not headers then
-          headers = { }
-        end
-        headers['Set-Cookie'] = cookie
+        self:add_header('Set-Cookie', cookie)
       end
-      return _write_head(self, status, headers)
+      return _write_head(self, code, headers, callback)
     end
     if options.default_session and not req.session then
       req.session = options.default_session

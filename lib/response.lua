@@ -1,5 +1,9 @@
 local Response = require('response')
-local FS = require('fs')
+local read_file
+do
+  local _table_0 = require('fs')
+  read_file = _table_0.read_file
+end
 local noop
 noop = function() end
 Response.prototype.auto_server = 'U-Gotta-Luvit'
@@ -7,7 +11,6 @@ Response.prototype.send = function(self, code, data, headers, close)
   if close == nil then
     close = true
   end
-  d('RESPONSE FOR', self.req and self.req.method, self.req and self.req.url, 'IS', code, data)
   self:write_head(code, headers or { })
   if data then
     self:write(data)
@@ -40,7 +43,7 @@ Response.prototype.render = function(self, template, data, options)
   if options == nil then
     options = { }
   end
-  FS.read_file(template, function(err, text)
+  read_file(template, function(err, text)
     if err then
       self:serve_not_found()
     else

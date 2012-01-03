@@ -10,7 +10,7 @@ local function authenticate(session, credentials, cb)
   -- N.B. this is simple "toggle" logic.
   -- in real world you should check credentials passed in `credentials`
   -- to decide whether to let user in.
-  -- just assign `null` to session in case of error.
+  -- just assign `nil` to session in case of error.
   -- session already set? drop session
   if session then
     session = nil
@@ -74,16 +74,14 @@ local function layers() return {
     local n = tonumber(req.url:sub(2), 10)
     if not n then nxt() return end
     local s = ('x'):rep(n)
-    res:write_head(200, {
+    res:send(200, s, {
       ['Content-Type'] = 'text/plain',
-      ['Content-Length'] = s:len()
+      ['Content-Length'] = #s,
     })
-    res:write(s)
-    res:finish()
   end,
 
   -- serve static files
-  Server.use('static')('/public/', 'public/', {
+  Server.use('static')('/public/', __dirname .. '/public/', {
     -- should the `file` contents be cached?
     --is_cacheable = function(file) return file.size <= 65536 end,
     is_cacheable = function(file) return true end,
@@ -92,23 +90,24 @@ local function layers() return {
   -- handle session
   Server.use('session')({
     secret = 'change-me-in-production',
+    -- 15 minute timeout
     ttl = 15 * 60 * 1000,
     -- called to get current user capabilities
     authorize = authorize,
   }),
 
   -- parse request body
-  Server.use('body')(),
+  --Server.use('body')(),
 
   -- process custom routes
   Server.use('route')({
+    { 'GET /foo', function(self, nxt)
+      self:send(200, 'FOOO', {})
+    end },
     -- serve chrome page
-    ['GET /'] = function(req, res, params, nxt)
-      res:render('index.html', req.context, {renderer = String.interp})
-    end,
-    ['GET /foo'] = function(req, res, params, nxt)
-      res:send(200, 'FOOO', {})
-    end,
+    { 'GET /$', function(self, nxt)
+      self:render(__dirname .. '/index.html', self.req.context)
+    end },
   }),
 
   -- handle authentication
@@ -117,8 +116,13 @@ local function layers() return {
     authenticate = authenticate,
   }),
 
+  function (req, res, nxt)
+    p('CTX', req.context)
+    nxt()
+  end,
+
   -- RPC & REST
-  Server.use('rest')('/rpc/'),
+  --Server.use('rest')('/rpc/'),
 
   -- GET
   function (req, res, nxt)
@@ -129,8 +133,7 @@ local function layers() return {
       ['Content-Type'] = 'text/plain',
       ['Content-Length'] = s:len()
     })
-    res:write(s)
-    res:close()
+    res:finish(s)
   end,
 
   -- report health status to load balancer

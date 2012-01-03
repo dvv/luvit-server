@@ -1,34 +1,59 @@
 -----------------------------------------------------------
 --
+-- Debug
+--
+-----------------------------------------------------------
+
+if process.env.DEBUG == '1'
+  _G.d = (...) -> debug('DEBUG', ...)
+else
+  _G.d = () ->
+
+-----------------------------------------------------------
+--
 -- string helpers
 --
 -----------------------------------------------------------
 
-export String
 String = require 'string'
 
-import sub, match, gsub, gmatch, byte, char, format from String
+import sub, find, match, gsub, gmatch, byte, char, format from String
+
+-- aliases
+String.replace = gsub
+
+-- strip whitespaces
+trim = (str, what = '%s+') ->
+  str = gsub str, '^' .. what, ''
+  str = gsub str, what .. '$', ''
+  str
+String.trim = trim
 
 -- interpolation
 String.interpolate = (data) =>
   return self if not data
   if type(data) == 'table'
     return format(self, unpack(b)) if data[1]
-    return gsub self, '($%b{})', (w) ->
-      var = sub w, 3, -2
+    return gsub self, '(#%b{})', (w) ->
+      var = trim sub w, 3, -2
       n, def = match var, '([^|]-)|(.*)'
       var = n if n
+      -- TODO: dot notation
       s = type(data[var]) == 'function' and data[var]() or data[var] or def or w
-      s = String.escape s
+      --s = String.escape s
       s
   else
-    String.format self, data
+    format self, data
 
-getmetatable('').__mod = String.interpolate
-
+--
+-- string to hexadecimal
+--
 String.tohex = (str) ->
   (gsub str, '(.)', (c) -> format('%02x', byte(c)))
 
+--
+-- hexadecimal to string
+--
 String.fromhex = (str) ->
   (gsub str, '(%x%x)', (h) ->
     n = tonumber h, 16
@@ -80,10 +105,40 @@ String.url_encode = (str) ->
 String.parse_query = (str) ->
   allvars = {}
   for pair in gmatch tostring(str), '[^&]+'
-      key, value = match pair, '([^=]*)=(.*)'
-      if key
-          allvars[key] = String.url_decode value
+    key, value = match pair, '([^=]*)=(.*)'
+    if key
+      allvars[key] = String.url_decode value
   allvars
+
+String.split = (str, sep = '%s+', nmax) ->
+  r = {}
+  return r if #str <= 0
+  plain = false
+  nmax = nmax or -1
+  nf = 1
+  ns = 1
+  nfr, nl = find str, sep, ns, plain
+  while nfr and nmax != 0
+    r[nf] = sub str, ns, nfr - 1
+    nf = nf + 1
+    ns = nl + 1
+    nmax = nmax - 1
+    nfr, nl = find str, sep, ns, plain
+  r[nf] = sub str, ns
+  r
+
+--
+-- augment string prototype
+--
+
+-- 'foo' + ' bar' == 'foo bar'
+getmetatable('').__add = (s, s1) -> s .. s1
+-- 'foo #{bar}' % {bar = 'baz'} == 'foo baz'
+getmetatable('').__mod = String.interpolate
+-- 'foo bar  baz' / ' ' == {'foo', 'bar', ' baz'}
+getmetatable('').__div = String.split
+-- '!!   foo bar  baz   !!!' - '!+' == '   foo bar  baz   '
+getmetatable('').__sub = String.trim
 
 -----------------------------------------------------------
 --
@@ -92,13 +147,7 @@ String.parse_query = (str) ->
 --
 -----------------------------------------------------------
 
-_G.Table = require 'table'
-
--- is object an array
-_G.is_array = (obj) -> type(obj) == 'table' and Table.maxn(obj) > 0
-
--- is object a hash
-_G.is_hash = (obj) -> type(obj) == 'table' and Table.maxn(obj) == 0
+T = require 'table'
 
 -- shallow copy
 _G.copy = (obj) ->
@@ -134,21 +183,82 @@ _G.extend_unless = (obj, with_obj) ->
     obj[k] = v if obj[k] == nil
   obj
 
------------------------------------------------------------
---
--- JSON
---
------------------------------------------------------------
+_G.push = (t, x) ->
+  T.insert t, x
 
-_G.JSON = require 'json'
+_G.unshift = (t, x) ->
+  T.insert t, 1, x
 
------------------------------------------------------------
---
--- Debug
---
------------------------------------------------------------
+_G.pop = (t) ->
+  T.remove t
 
-if process.env.DEBUG == '1'
-  _G.d = (...) -> debug('DEBUG', ...)
-else
-  _G.d = () ->
+_G.shift = (t) ->
+  T.remove t, 1
+
+_G.slice = (t, start = 0, stop = #t) ->
+  start = start + #t if start < 0
+  stop = stop + #t if stop < 0
+  if type(t) == 'string'
+    return sub(t, start + 1, stop)
+  -- table
+  r = {}
+  n = 0
+  i = 0
+  for i = start + 1, stop
+    n = n + 1
+    r[n] = t[i]
+  r
+
+_G.sort = (t, f) ->
+  T.sort t, f
+
+_G.join = (t, s = ',') ->
+  T.concat t, s
+
+_G.has = (t, s) ->
+  rawget(t, s)
+
+_G.keys = (t) ->
+  r = {}
+  n = 0
+  for k, v in pairs(t)
+    n = n + 1
+    r[n] = k
+  r
+
+_G.values = (t) ->
+  r = {}
+  n = 0
+  for k, v in pairs(t)
+    n = n + 1
+    r[n] = v
+  r
+
+_G.map = (t, f) ->
+  r = {}
+  for k, v in pairs(t)
+    r[k] = f v, k, t
+  r
+
+_G.filter = (t, f) ->
+  r = {}
+  for k, v in pairs(t)
+    r[k] = v if f v, k, t
+  r
+
+_G.each = (t, f) ->
+  for k, v in pairs(t)
+    f v, k, t
+
+_G.curry = (f, g) ->
+  (...) -> f g unpack arg
+
+_G.bind111 = (f, ...) ->
+  (...) -> f g unpack arg
+
+_G.indexOf = (t, x) ->
+  if type(t) == 'string'
+    return find t, x, true
+  for k, v in pairs(t)
+    return k if v == x
+  nil

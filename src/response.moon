@@ -4,14 +4,14 @@
 
 Response = require 'response'
 
-FS = require 'fs'
+import read_file from require 'fs'
 
 noop = () ->
 
 Response.prototype.auto_server = 'U-Gotta-Luvit'
 
 Response.prototype.send = (code, data, headers, close = true) =>
-  d('RESPONSE FOR', @req and @req.method, @req and @req.url, 'IS', code, data)
+  --d('RESPONSE FOR', @req and @req.method, @req and @req.url, 'IS', code, data)
   @write_head code, headers or {}
   @write data if data
   @finish() if close
@@ -41,10 +41,11 @@ Response.prototype.serve_invalid_range = (size) =>
 -- and serve it with status 200 as text/html
 Response.prototype.render = (template, data = {}, options = {}) =>
   -- TODO: caching
-  FS.read_file template, (err, text) ->
+  read_file template, (err, text) ->
     if err
       @serve_not_found()
     else
+      -- TODO: streaming renderer, like c9/kernel
       html = (text % data)
       @send 200, html, {
         ['Content-Type']: 'text/html; charset=UTF-8'

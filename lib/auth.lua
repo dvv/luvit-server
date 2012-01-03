@@ -8,7 +8,6 @@ return function(url, options)
   return function(req, res, continue)
     if req.url == url then
       options.authenticate(req.session, req.body, function(session)
-        p('AUTH', session)
         req.session = session
         return res:send(302, nil, {
           ['Location'] = req.headers.referer or req.headers.referrer or '/'
