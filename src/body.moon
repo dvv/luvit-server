@@ -4,6 +4,7 @@
 
 return (options = {}) ->
 
+  import concat from require 'table'
   import decode from require 'json'
 
   (req, res, continue) ->
@@ -17,7 +18,7 @@ return (options = {}) ->
 
     -- parse body
     req\on 'end', () ->
-      body = join body
+      body = concat body
       -- first octet is [ or { ?
       char = body\sub 1, 1
       if char == '[' or char == '{'

@@ -2,6 +2,11 @@ return function(options)
   if options == nil then
     options = { }
   end
+  local concat
+  do
+    local _table_0 = require('table')
+    concat = _table_0.concat
+  end
   local decode
   do
     local _table_0 = require('json')
@@ -15,7 +20,7 @@ return function(options)
       body[length] = chunk
     end)
     return req:on('end', function()
-      body = join(body)
+      body = concat(body)
       local char = body:sub(1, 1)
       if char == '[' or char == '{' then
         local status, result = pcall(function()
