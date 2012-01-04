@@ -1,8 +1,8 @@
 local Response = require('response')
-local read_file
+local compile
 do
-  local _table_0 = require('fs')
-  read_file = _table_0.read_file
+  local _table_0 = require('kernel')
+  compile = _table_0.compile
 end
 local noop
 noop = function() end
@@ -36,18 +36,84 @@ Response.prototype.serve_invalid_range = function(self, size)
     ['Content-Range'] = 'bytes=*/' .. size
   })
 end
-Response.prototype.render = function(self, template, data, options)
+local helpers = false
+local render
+render = function(filename, data, options, callback)
   if data == nil then
     data = { }
   end
   if options == nil then
     options = { }
   end
-  read_file(template, function(err, text)
+  compile(filename, function(err, template)
     if err then
-      self:serve_not_found()
+      callback(err)
     else
-      local html = (text % data)
+      setmetatable(data, {
+        __index = helpers
+      })
+      template(data, callback)
+    end
+    return 
+  end)
+  return 
+end
+helpers = {
+  IF = function(condition, block, callback)
+    if condition then
+      block(getfenv(2), callback)
+    else
+      callback(nil, '')
+    end
+    return 
+  end,
+  EACH = function(array, block, callback)
+    local parts = { }
+    local size = #array
+    local done = false
+    local check
+    check = function(err)
+      if done then
+        return 
+      end
+      if #parts == size then
+        done = true
+        return callback(err, join(parts, ''))
+      end
+    end
+    for k, v in ipairs(array) do
+      block(v, function(err, result)
+        if err then
+          return check(err)
+        end
+        parts[k] = result
+        return check()
+      end)
+    end
+    return check()
+  end,
+  INC = function(name, callback)
+    return render(__dirname .. '/../example/' .. name, getfenv(2), nil, callback)
+  end,
+  ESC = function(value, callback)
+    if callback then
+      return callback(nil, value:escape())
+    else
+      return value:escape()
+    end
+  end
+}
+Response.prototype.render = function(self, filename, data, options)
+  if data == nil then
+    data = { }
+  end
+  if options == nil then
+    options = { }
+  end
+  render(filename, data, options, function(err, html)
+    if err then
+      self:fail(err.message or err)
+    else
       self:send(200, html, {
         ['Content-Type'] = 'text/html; charset=UTF-8',
         ['Content-Length'] = #html

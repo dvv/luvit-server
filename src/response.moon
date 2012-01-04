@@ -4,7 +4,7 @@
 
 Response = require 'response'
 
-import read_file from require 'fs'
+import compile from require 'kernel'
 
 noop = () ->
 
@@ -37,16 +37,58 @@ Response.prototype.serve_invalid_range = (size) =>
     ['Content-Range']: 'bytes=*/' .. size
   }
 
--- render file named `template` with data from `data` table
--- and serve it with status 200 as text/html
-Response.prototype.render = (template, data = {}, options = {}) =>
-  -- TODO: caching
-  read_file template, (err, text) ->
+helpers = false
+
+-- render filename with data from `data` table
+render = (filename, data = {}, options = {}, callback) ->
+  compile filename, (err, template) ->
     if err
-      @serve_not_found()
+      callback err
     else
-      -- TODO: streaming renderer, like c9/kernel
-      html = (text % data)
+      setmetatable data, __index: helpers
+      template data, callback
+    return
+  return
+
+helpers = {
+  IF: (condition, block, callback) ->
+    if condition
+      block getfenv(2), callback
+    else
+      callback nil, ''
+    return
+  EACH: (array, block, callback) ->
+    parts = {}
+    size = #array
+    done = false
+    check = (err) ->
+      return if done
+      if #parts == size
+        done = true
+        callback err, join parts, ''
+    -- TODO: pairs?
+    for k, v in ipairs array
+      block v, (err, result) ->
+        return check err if err
+        parts[k] = result
+        check()
+    check()
+  INC: (name, callback) ->
+    render __dirname .. '/../example/' .. name, getfenv(2), nil, callback
+  ESC: (value, callback) ->
+    if callback
+      callback nil, value\escape()
+    else
+      return value\escape()
+}
+
+-- render filename with data from `data` table
+-- and serve it with status 200 as text/html
+Response.prototype.render = (filename, data = {}, options = {}) =>
+  render filename, data, options, (err, html) ->
+    if err
+      @fail err.message or err
+    else
       @send 200, html, {
         ['Content-Type']: 'text/html; charset=UTF-8'
         ['Content-Length']: #html

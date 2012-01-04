@@ -49,6 +49,12 @@ local function authorize(session, cb)
           cb(nil, session or {})
         end
       },
+      array = {
+        {a = 'a'},
+        {b = 'b'},
+        {c = 'c'},
+        {d = 'd'},
+      }
     })
   else
     cb({
@@ -117,7 +123,7 @@ local function layers() return {
   }),
 
   function (req, res, nxt)
-    p('CTX', req.context)
+    --p('CTX', req.context)
     nxt()
   end,
 

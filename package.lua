@@ -7,5 +7,6 @@ return {
     json    = "https://github.com/luvit/json/zipball/master",
     crypto  = "https://github.com/luvit/crypto/zipball/master",
     uuid    = "https://github.com/luvit/uuid/zipball/master",
+    kernel  = "https://github.com/luvit/kernel/zipball/master",
   },
 }
