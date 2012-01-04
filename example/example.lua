@@ -75,6 +75,9 @@ end
 
 local function layers() return {
 
+  -- report health status to load balancer
+  Server.use('health')(),
+
   -- test serving requested amount of octets
   function(req, res, nxt)
     local n = tonumber(req.url:sub(2), 10)
@@ -103,7 +106,12 @@ local function layers() return {
   }),
 
   -- parse request body
-  --Server.use('body')(),
+  Server.use('body')(),
+
+  function (req, res, nxt)
+    p('BODY', req.method, req.url, req.body)
+    nxt()
+  end,
 
   -- process custom routes
   Server.use('route')({
@@ -123,7 +131,7 @@ local function layers() return {
   }),
 
   function (req, res, nxt)
-    --p('CTX', req.context)
+    --p('CTX', req.body)
     nxt()
   end,
 
@@ -141,9 +149,6 @@ local function layers() return {
     })
     res:finish(s)
   end,
-
-  -- report health status to load balancer
-  Server.use('health')(),
 
 }end
 

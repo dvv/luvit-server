@@ -212,7 +212,7 @@ _G.slice = (t, start = 0, stop = #t) ->
 _G.sort = (t, f) ->
   T.sort t, f
 
-_G.join = (t, s = ',') ->
+_G.join = (t, s) ->
   T.concat t, s
 
 _G.has = (t, s) ->
@@ -262,3 +262,69 @@ _G.indexOf = (t, x) ->
   for k, v in pairs(t)
     return k if v == x
   nil
+
+-----------------------------------------------------------
+--
+-- rich interpolation
+--
+-----------------------------------------------------------
+Kernel = require 'kernel'
+
+--setmetatable Kernel.helpers, __index: {
+
+extend Kernel.helpers, {
+
+  wrap: (x) ->
+    if type(x) == 'function'
+      '{{FUNCTION}}'
+    elseif type(x) == 'table'
+      '{{TABLE}}'
+    elseif x == nil
+      '{{NIL}}'
+    else
+      x
+
+  PARTIAL: (name, locals = {}, callback) ->
+    Kernel.compile name, (err, template) ->
+      if err
+        callback err
+      else
+        template locals, callback
+
+  IF: (condition, block, callback) ->
+    if condition
+      block {}, callback
+    else
+      callback nil, ''
+
+  LOOP: (array, block, callback) ->
+    left = 1
+    parts = {}
+    done = false
+    for i, value in ipairs array
+      left = left + 1
+      --value.index = i
+      block value, (err, result) ->
+        return if done
+        if err
+          done = true
+          return callback err
+        parts[i] = result
+        left = left - 1
+        if left == 0
+          done = true
+          callback nil, join parts
+    left = left - 1
+    if left == 0 and not done
+      done = true
+      callback nil, join parts
+
+  ESC: (value, callback) ->
+    if callback
+      callback nil, value\escape()
+    else
+      return value\escape()
+
+}
+
+_G.render = Kernel.helpers.PARTIAL

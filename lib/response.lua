@@ -37,72 +37,6 @@ Response.prototype.serve_invalid_range = function(self, size)
   })
 end
 local helpers = false
-local render
-render = function(filename, data, options, callback)
-  if data == nil then
-    data = { }
-  end
-  if options == nil then
-    options = { }
-  end
-  compile(filename, function(err, template)
-    if err then
-      callback(err)
-    else
-      setmetatable(data, {
-        __index = helpers
-      })
-      template(data, callback)
-    end
-    return 
-  end)
-  return 
-end
-helpers = {
-  IF = function(condition, block, callback)
-    if condition then
-      block(getfenv(2), callback)
-    else
-      callback(nil, '')
-    end
-    return 
-  end,
-  EACH = function(array, block, callback)
-    local parts = { }
-    local size = #array
-    local done = false
-    local check
-    check = function(err)
-      if done then
-        return 
-      end
-      if #parts == size then
-        done = true
-        return callback(err, join(parts, ''))
-      end
-    end
-    for k, v in ipairs(array) do
-      block(v, function(err, result)
-        if err then
-          return check(err)
-        end
-        parts[k] = result
-        return check()
-      end)
-    end
-    return check()
-  end,
-  INC = function(name, callback)
-    return render(__dirname .. '/../example/' .. name, getfenv(2), nil, callback)
-  end,
-  ESC = function(value, callback)
-    if callback then
-      return callback(nil, value:escape())
-    else
-      return value:escape()
-    end
-  end
-}
 Response.prototype.render = function(self, filename, data, options)
   if data == nil then
     data = { }
@@ -110,7 +44,7 @@ Response.prototype.render = function(self, filename, data, options)
   if options == nil then
     options = { }
   end
-  render(filename, data, options, function(err, html)
+  render(filename, data, function(err, html)
     if err then
       self:fail(err.message or err)
     else

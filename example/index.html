@@ -20,7 +20,7 @@ body {
   <div class="topbar" data-scrollspy="scrollspy" data-dropdown="dropdown">
     <div class="topbar-inner">
       <div class="container">
-        <a class="brand" href="#">{{name}}</a>
+        <a class="brand" href="#">{name}</a>
         <ul class="nav">
           <li><a href="#overview">Overview</a></li>
           <li><a href="#less">Less</a></li>
@@ -65,13 +65,29 @@ body {
 {#IF(uid)}
 <ul>
 <li>{uid}</li>
-{#EACH(array)}
+{#LOOP(array)}
 <li>{a}{foo}</li>
-{/EACH}
+{/LOOP}
 </ul>
 {/IF}
 
-{INC('views/foo.html')}
+{PARTIAL('example/views/foo.html', this)}
+
+<div class="well" style="background-color: #888; border: none; padding: 40px;">
+  <div class="modal" style="position: relative; top: auto; left: auto; margin: 0 auto; z-index: 1">
+    <div class="modal-header">
+      <a href="#" class="close">×</a>
+      <h3>Modal Heading</h3>
+    </div>
+    <div class="modal-body">
+      <iframe src="https://loginza.ru/api/widget?overlay=loginza&lang=en&token_url=http://dvv.dyndns.org/rpc/auth" style="width:359px;height:300px;" scrolling="no" frameborder="no"></iframe>
+    </div>
+    <div class="modal-footer">
+      <a href="#" class="btn primary">Primary</a>
+      <a href="#" class="btn secondary">Secondary</a>
+    </div>
+  </div>
+</div>
 
 <script src="public/jquery.min.js"></script>
 <script src="public/bootstrap.js"></script>

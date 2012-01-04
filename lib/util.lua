@@ -223,9 +223,6 @@ _G.sort = function(t, f)
   return T.sort(t, f)
 end
 _G.join = function(t, s)
-  if s == nil then
-    s = ','
-  end
   return T.concat(t, s)
 end
 _G.has = function(t, s)
@@ -291,3 +288,72 @@ _G.indexOf = function(t, x)
   end
   return nil
 end
+local Kernel = require('kernel')
+extend(Kernel.helpers, {
+  wrap = function(x)
+    if type(x) == 'function' then
+      return '{{FUNCTION}}'
+    elseif type(x) == 'table' then
+      return '{{TABLE}}'
+    elseif x == nil then
+      return '{{NIL}}'
+    else
+      return x
+    end
+  end,
+  PARTIAL = function(name, locals, callback)
+    if locals == nil then
+      locals = { }
+    end
+    return Kernel.compile(name, function(err, template)
+      if err then
+        return callback(err)
+      else
+        return template(locals, callback)
+      end
+    end)
+  end,
+  IF = function(condition, block, callback)
+    if condition then
+      return block({ }, callback)
+    else
+      return callback(nil, '')
+    end
+  end,
+  LOOP = function(array, block, callback)
+    local left = 1
+    local parts = { }
+    local done = false
+    for i, value in ipairs(array) do
+      left = left + 1
+      block(value, function(err, result)
+        if done then
+          return 
+        end
+        if err then
+          done = true
+          return callback(err)
+        end
+        parts[i] = result
+        left = left - 1
+        if left == 0 then
+          done = true
+          return callback(nil, join(parts))
+        end
+      end)
+    end
+    left = left - 1
+    if left == 0 and not done then
+      done = true
+      return callback(nil, join(parts))
+    end
+  end,
+  ESC = function(value, callback)
+    if callback then
+      return callback(nil, value:escape())
+    else
+      return value:escape()
+    end
+  end
+})
+_G.render = Kernel.helpers.PARTIAL
