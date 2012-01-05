@@ -7,8 +7,6 @@ import encode, decode from require 'json'
 
 return (mount = '/rpc/', options = {}) ->
 
-  parseUrl = require('url').parse
-
   -- mount should end with '/'
   mount = mount .. '/' if sub(mount, #mount) != '/'
   mlen = #mount
@@ -20,13 +18,12 @@ return (mount = '/rpc/', options = {}) ->
   -- handler
   return (req, res, continue) ->
 
-    -- defaults
-    req.uri = parseUrl(req.url) if not req.uri
     -- none of our business unless url starts with `mount`
     path = req.uri.pathname
     return continue() if sub(path, 1, mlen) != mount
 
     -- split pathname into resource name and id
+    -- TODO: support deeper resources
     resource = nil
     id = nil
     path\sub(mlen + 1)\gsub '[^/]+', (part) ->
@@ -40,7 +37,7 @@ return (mount = '/rpc/', options = {}) ->
     -- determine handler method and its parameters
     --
 
-    -- N.B. support X-HTTP-Method-Override: to ease REST for dumb clients
+    -- N.B. support X-HTTP-Method-Override: to ease ReST for dumb clients
     verb = req.headers['X-HTTP-Method-Override'] or req.method
     method = nil
     params = nil
@@ -50,13 +47,13 @@ return (mount = '/rpc/', options = {}) ->
 
       method = 'get'
       -- get by ID
-      if id and id ~= brand_new_id
+      if id and id != brand_new_id
         params = {id}
       -- query
       else
         method = 'query'
         -- bulk get via POST X-HTTP-Method-Override: GET
-        if is_array(req.body)
+        if req.body[1]
           params = {req.body}
         -- query by RQL
         else
@@ -76,7 +73,7 @@ return (mount = '/rpc/', options = {}) ->
           params = {id, req.body}
       else
         -- bulk update via POST X-HTTP-Method-Override: PUT
-        if is_array(req.body) and is_array(req.body[1])
+        if req.body[1] and req.body[1][1]
           params = {req.body[1], req.body[2]}
         -- update by RQL
         else
@@ -90,7 +87,7 @@ return (mount = '/rpc/', options = {}) ->
         params = {id}
       else
         -- bulk remove via POST X-HTTP-Method-Override: DELETE
-        if is_array(req.body)
+        if req.body[1]
           params = {req.body}
         -- remove by RQL
         else
@@ -160,12 +157,11 @@ return (mount = '/rpc/', options = {}) ->
     return respond 405 if not resource[method]
 
     --
-    -- call the handler. signature is fn(params..., step)
+    -- call the handler. signature is fn(params..., nxt), or fn(context, params..., nxt)
     --
 
     if options.pass_context
-      Table.insert params, 1, context
-    Table.insert params, respond
+      unshift params, context
+    push params, respond
     --p('RPC?', params)
     resource[method] unpack params
-    return

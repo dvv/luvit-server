@@ -127,31 +127,19 @@ local function layers() return {
     end },
   }),
 
+  function (req, res, nxt)
+    p('CTX', req.context)
+    nxt()
+  end,
+
   -- handle authentication
   Server.use('auth')('/rpc/auth', {
     -- called to get current user capabilities
     authenticate = authenticate,
   }),
 
-  function (req, res, nxt)
-    p('CTX', req.context)
-    nxt()
-  end,
-
   -- RPC & REST
-  --Server.use('rest')('/rpc/'),
-
-  -- GET
-  function (req, res, nxt)
---d(req)
-    local data = req.session and req.session.uid or 'Мир'
-    local s = ('Привет, ' .. data) --:rep(100)
-    res:write_head(200, {
-      ['Content-Type'] = 'text/plain',
-      ['Content-Length'] = s:len()
-    })
-    res:finish(s)
-  end,
+  Server.use('rest')('/rpc/'),
 
 }end
 

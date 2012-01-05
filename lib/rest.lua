@@ -15,16 +15,12 @@ return function(mount, options)
   if options == nil then
     options = { }
   end
-  local parseUrl = require('url').parse
   if sub(mount, #mount) ~= '/' then
     mount = mount .. '/'
   end
   local mlen = #mount
   local brand_new_id = options.put_new and options.put_new or { }
   return function(req, res, continue)
-    if not req.uri then
-      req.uri = parseUrl(req.url)
-    end
     local path = req.uri.pathname
     if sub(path, 1, mlen) ~= mount then
       return continue()
@@ -49,7 +45,7 @@ return function(mount, options)
         }
       else
         method = 'query'
-        if is_array(req.body) then
+        if req.body[1] then
           params = {
             req.body
           }
@@ -74,7 +70,7 @@ return function(mount, options)
           }
         end
       else
-        if is_array(req.body) and is_array(req.body[1]) then
+        if req.body[1] and req.body[1][1] then
           params = {
             req.body[1],
             req.body[2]
@@ -93,7 +89,7 @@ return function(mount, options)
           id
         }
       else
-        if is_array(req.body) then
+        if req.body[1] then
           params = {
             req.body
           }
@@ -114,6 +110,7 @@ return function(mount, options)
         }
       end
     end
+    p('PARSED', resource, method, params)
     local respond
     respond = function(err, result)
       local response = nil
@@ -155,10 +152,10 @@ return function(mount, options)
       return respond(405)
     end
     if options.pass_context then
-      Table.insert(params, 1, context)
+      unshift(params, context)
     end
-    Table.insert(params, respond)
-    resource[method](unpack(params))
-    return 
+    push(params, respond)
+    p('RPC?', params)
+    return resource[method](unpack(params))
   end
 end

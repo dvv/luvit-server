@@ -93,8 +93,8 @@ return function(options)
       end)
     else
       req.context = context.guest or { }
-      if req.session and req.session.uid then
-        req.context = context.user or req.context
+      if req.session and req.session.uid and context.user then
+        req.context = context.user
       end
       return continue()
     end
