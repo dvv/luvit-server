@@ -11,11 +11,9 @@ expires_in = (ttl) -> date '%c', time() + ttl
 
 serialize = (secret, obj) ->
   str = encode obj
-  --p('SER', str)
   str_enc = encrypt secret, str
   timestamp = time()
   hmac_sig = sign secret, timestamp .. str_enc
-  --p('ENC', hmac_sig, timestamp, str_enc)
   result = hmac_sig .. timestamp .. str_enc
   result
 
@@ -23,22 +21,18 @@ deserialize = (secret, ttl, str) ->
   hmac_signature = sub str, 1, 40
   timestamp = tonumber sub(str, 41, 50), 10
   data = sub str, 51
-  --d('DEC', hmac_signature, timestamp, data)
   hmac_sig = sign secret, timestamp .. data
   return nil if hmac_signature != hmac_sig or timestamp + ttl <= time()
   data = uncrypt secret, data
   data = decode data
-  --d('DESER', data, data != data)
   data = nil if data == null
   data
 
 read_session = (key, secret, ttl, req) ->
   cookie = type(req) == 'string' and req or req.headers.cookie
-  --d(cookie)
   if cookie
     cookie = match cookie, '%s*;*%s*' .. key .. '=(%w*)'
     if cookie and cookie != ''
-      --d('raw read', cookie)
       return deserialize secret, ttl, cookie
   nil
 
@@ -59,9 +53,9 @@ return (options = {}) ->
 
     -- read session data from request and store it in req.session
     req.session = read_session key, secret, ttl, req
-    --d('SESSION IN', req.session, req.headers.cookie)
 
     -- patch response to support writing cookies
+    -- TODO: is there a lighter method?
     _write_head = res.write_head
     res.write_head = (self, code, headers, callback) ->
       cookie = nil
@@ -71,7 +65,6 @@ return (options = {}) ->
       else
         cookie = format '%s=%s;expires=%s;httponly;path=/', key, serialize(secret, req.session), expires_in(ttl)
       -- Set-Cookie
-      --p('SESSION OUT', req.session, cookie)
       if cookie
         self\add_header 'Set-Cookie', cookie
       _write_head self, code, headers, callback
@@ -82,17 +75,16 @@ return (options = {}) ->
 
     -- use authorization callback if specified
     if options.authorize
-      -- given current session, return context
+      -- given current session, setup request context
       options.authorize req.session, (context) ->
         req.context = context or {}
         continue()
-    -- assign static context
+    -- assign static request context
     else
-      -- default is guest context
+      -- default is guest request context
       req.context = context.guest or {}
       -- user authenticated?
-      if req.session and req.session.uid
-        -- provide user context
-        req.context = context.user or req.context
-      -- FIXME: admin context somehow?
+      if req.session and req.session.uid and context.user
+        -- provide user request context
+        req.context = context.user
       continue()

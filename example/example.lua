@@ -16,7 +16,7 @@ local function authenticate(session, credentials, cb)
     session = nil
   -- no session so far? get new session
   else
-    session = {
+    session = credentials or {
       uid = tostring(require('math').random()):sub(3),
     }
   end
@@ -31,6 +31,8 @@ local function authorize(session, cb)
   if session and session.uid then
     cb({
       uid = session.uid,
+      name = session.name,
+      photo = session.photo,
       -- GET /foo?bar=baz ==> this.foo.query('bar=baz')
       foo = {
         query = function(query, cb)
@@ -109,7 +111,8 @@ local function layers() return {
   Server.use('body')(),
 
   function (req, res, nxt)
-    p('BODY', req.method, req.url, req.body)
+    --p('BODY', req.method, req.url, req.body)
+    --p('CTX', req.context)
     nxt()
   end,
 
@@ -131,7 +134,7 @@ local function layers() return {
   }),
 
   function (req, res, nxt)
-    --p('CTX', req.body)
+    p('CTX', req.context)
     nxt()
   end,
 

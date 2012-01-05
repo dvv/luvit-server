@@ -30,6 +30,7 @@ body {
         </form>
         {#IF(uid)}
         <ul class="nav">
+          <li><img src="{photo}" width="30" height="30" style="display: inline" /></li>
           <li class="dropdown">
             <a href="#" class="dropdown-toggle">Account</a>
             <ul class="dropdown-menu">
@@ -42,8 +43,22 @@ body {
         </ul>
         {/IF}
         {#IF(not uid)}
+        <!-- signin dialog -->
+        <div id="dlgSignIn" class="modal hide fade" style="display: none; ">
+          <div class="modal-header">
+            <a href="#" class="close">×</a>
+            <h3>Please, authenticate</h3>
+          </div>
+          <div class="modal-body">
+            <iframe src="https://loginza.ru/api/widget?overlay=loginza&lang=en&token_url=http://dvv.dyndns.org/rpc/auth" style="width:359px;height:300px;" scrolling="no" frameborder="no"></iframe>
+          </div>
+          <!--div class="modal-footer">
+            <a href="#" class="btn primary">Primary</a>
+            <a href="#" class="btn secondary">Secondary</a>
+          </div-->
+        </div>
         <ul class="nav">
-          <li><a href="/rpc/auth">Sign In</a></li>
+          <li><a href="#" data-controls-modal="dlgSignIn" data-backdrop="true" data-keyboard="true">Sign In</a></li>
         </ul>
         {/IF}
       </div>
@@ -61,7 +76,7 @@ body {
 </ul>
 </section>
 
-<p id="hello">Hello, {{uid or "Sunny World"}}!</p>
+<p id="hello">Hello, {{name or uid or "Sunny World"}}!</p>
 {#IF(uid)}
 <ul>
 <li>{uid}</li>
@@ -72,22 +87,6 @@ body {
 {/IF}
 
 {PARTIAL('example/views/foo.html', this)}
-
-<div class="well" style="background-color: #888; border: none; padding: 40px;">
-  <div class="modal" style="position: relative; top: auto; left: auto; margin: 0 auto; z-index: 1">
-    <div class="modal-header">
-      <a href="#" class="close">×</a>
-      <h3>Modal Heading</h3>
-    </div>
-    <div class="modal-body">
-      <iframe src="https://loginza.ru/api/widget?overlay=loginza&lang=en&token_url=http://dvv.dyndns.org/rpc/auth" style="width:359px;height:300px;" scrolling="no" frameborder="no"></iframe>
-    </div>
-    <div class="modal-footer">
-      <a href="#" class="btn primary">Primary</a>
-      <a href="#" class="btn secondary">Secondary</a>
-    </div>
-  </div>
-</div>
 
 <script src="public/jquery.min.js"></script>
 <script src="public/bootstrap.js"></script>
