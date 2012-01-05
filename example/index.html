@@ -76,17 +76,22 @@ body {
 </ul>
 </section>
 
+{#DEF('item')}
+123{foo}456
+{/DEF}
+
 <p id="hello">Hello, {{name or uid or "Sunny World"}}!</p>
 {#IF(uid)}
 <ul>
 <li>{uid}</li>
 {#LOOP(array)}
 <li>{a}{foo}</li>
+<li>{USE('item')}</li>
 {/LOOP}
 </ul>
 {/IF}
 
-{PARTIAL('example/views/foo.html', this)}
+{PARTIAL('example/views/foo.html')}
 
 <script src="public/jquery.min.js"></script>
 <script src="public/bootstrap.js"></script>

@@ -75,76 +75,39 @@ local function authorize(session, cb)
   end
 end
 
-local function layers() return {
 
-  -- report health status to load balancer
-  Server.use('health')(),
-
-  -- test serving requested amount of octets
-  function(req, res, nxt)
-    local n = tonumber(req.url:sub(2), 10)
-    if not n then nxt() return end
-    local s = ('x'):rep(n)
-    res:send(200, s, {
-      ['Content-Type'] = 'text/plain',
-      ['Content-Length'] = #s,
-    })
-  end,
+local options = {
 
   -- serve static files
-  Server.use('static')('/public/', __dirname .. '/public/', {
-    -- should the `file` contents be cached?
-    --is_cacheable = function(file) return file.size <= 65536 end,
-    is_cacheable = function(file) return true end,
-  }),
+  static = {
+    dir = __dirname .. '/public/',
+    is_cacheable = function(file) return file.size <= 65536 end,
+  },
 
   -- handle session
-  Server.use('session')({
+  session = {
     secret = 'change-me-in-production',
     -- 15 minute timeout
     ttl = 15 * 60 * 1000,
     -- called to get current user capabilities
     authorize = authorize,
-  }),
-
-  -- parse request body
-  Server.use('body')(),
-
-  function (req, res, nxt)
-    --p('BODY', req.method, req.url, req.body)
-    --p('CTX', req.context)
-    nxt()
-  end,
+    -- called to authenticate credentials
+    authenticate = authenticate,
+  },
 
   -- process custom routes
-  Server.use('route')({
+  routes = {
     { 'GET /foo', function(self, nxt)
       self:send(200, 'FOOO', {})
     end },
     -- serve chrome page
     { 'GET /$', function(self, nxt)
-      self:render(__dirname .. '/index.html', self.req.context)
+      local context = self.req.context
+      self:render(__dirname .. '/index.html', context)
     end },
-  }),
+  },
 
-  function (req, res, nxt)
-    p('CTX', req.context)
-    nxt()
-  end,
+}
 
-  -- handle authentication
-  Server.use('auth')('/rpc/auth', {
-    -- called to get current user capabilities
-    authenticate = authenticate,
-  }),
-
-  -- RPC & REST
-  Server.use('rest')('/rpc/'),
-
-}end
-
-Server.run(layers(), 65401)
+Server.standard(65401, '0.0.0.0', options)
 print('Server listening at http://localhost:65401/')
---Stack.create_server(stack(), 65402)
---Stack.create_server(stack(), 65403)
---Stack.create_server(stack(), 65404)

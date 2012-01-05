@@ -137,6 +137,9 @@ end
 getmetatable('').__add = function(s, s1)
   return s .. s1
 end
+getmetatable('').__concat = function(a, b)
+  return tostring(a) .. tostring(b)
+end
 getmetatable('').__mod = String.interpolate
 getmetatable('').__div = String.split
 getmetatable('').__sub = String.trim
@@ -289,20 +292,11 @@ _G.indexOf = function(t, x)
   return nil
 end
 local Kernel = require('kernel')
+local _defs = { }
 extend(Kernel.helpers, {
-  wrap = function(x)
-    if type(x) == 'function' then
-      return '{{FUNCTION}}'
-    elseif type(x) == 'table' then
-      return '{{TABLE}}'
-    elseif x == nil then
-      return '{{NIL}}'
-    else
-      return x
-    end
-  end,
   PARTIAL = function(name, locals, callback)
-    if locals == nil then
+    if not callback then
+      callback = locals
       locals = { }
     end
     return Kernel.compile(name, function(err, template)
@@ -354,6 +348,17 @@ extend(Kernel.helpers, {
     else
       return value:escape()
     end
+  end,
+  DEF = function(name, block, callback)
+    _defs[name] = block
+    return callback(nil, '')
+  end,
+  USE = function(name, locals, callback)
+    if not callback then
+      callback = locals
+      locals = { }
+    end
+    return _defs[name](locals, callback)
   end
 })
 _G.render = Kernel.helpers.PARTIAL

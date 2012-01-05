@@ -133,6 +133,8 @@ String.split = (str, sep = '%s+', nmax) ->
 
 -- 'foo' + ' bar' == 'foo bar'
 getmetatable('').__add = (s, s1) -> s .. s1
+-- nil .. 'foo' == 'nilfoo'
+getmetatable('').__concat = (a, b) -> tostring(a) .. tostring(b)
 -- 'foo #{bar}' % {bar = 'baz'} == 'foo baz'
 getmetatable('').__mod = String.interpolate
 -- 'foo bar  baz' / ' ' == {'foo', 'bar', ' baz'}
@@ -270,21 +272,14 @@ _G.indexOf = (t, x) ->
 -----------------------------------------------------------
 Kernel = require 'kernel'
 
---setmetatable Kernel.helpers, __index: {
+_defs = {}
 
 extend Kernel.helpers, {
 
-  wrap: (x) ->
-    if type(x) == 'function'
-      '{{FUNCTION}}'
-    elseif type(x) == 'table'
-      '{{TABLE}}'
-    elseif x == nil
-      '{{NIL}}'
-    else
-      x
-
-  PARTIAL: (name, locals = {}, callback) ->
+  PARTIAL: (name, locals, callback) ->
+    if not callback
+      callback = locals
+      locals = {}
     Kernel.compile name, (err, template) ->
       if err
         callback err
@@ -324,6 +319,16 @@ extend Kernel.helpers, {
       callback nil, value\escape()
     else
       return value\escape()
+
+  DEF: (name, block, callback) ->
+    _defs[name] = block
+    callback nil, ''
+
+  USE: (name, locals, callback) ->
+    if not callback
+      callback = locals
+      locals = {}
+    _defs[name] locals, callback
 
 }
 

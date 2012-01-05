@@ -32,7 +32,22 @@ run = function(layers, port, host)
   end)
   return server
 end
+local standard
+standard = function(port, host, options)
+  extend(options, { })
+  local layers = {
+    use('health')(),
+    use('static')('/public/', options.static.dir, options.static),
+    use('session')(options.session),
+    use('body')(),
+    use('route')(options.routes),
+    use('auth')('/rpc/auth', options.session.authenticate),
+    use('rest')('/rpc/')
+  }
+  return run(layers, port, host)
+end
 return {
   use = use,
-  run = run
+  run = run,
+  standard = standard
 }

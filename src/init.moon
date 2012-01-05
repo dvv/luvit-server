@@ -21,9 +21,15 @@ Stack.errorHandler = (req, res, err) ->
   else
     res\send 404
 
+--
+-- require a plugin by name
+--
 use = (plugin_name) ->
   require Path.join __dirname, plugin_name
 
+--
+-- create listening server with specified middleware layers
+--
 run = (layers, port, host) ->
   handler = Stack.stack unpack(layers)
   server = Http.create_server host or '127.0.0.1', port or 80, (req, res) ->
@@ -37,8 +43,34 @@ run = (layers, port, host) ->
     return
   server
 
+--
+-- create standard listening server with default middleware
+--
+standard = (port, host, options) ->
+  extend options, {
+  }
+  layers = {
+    -- report health status to load balancer
+    use('health')()
+    -- serve static files
+    use('static')('/public/', options.static.dir, options.static)
+    -- handle session
+    use('session')(options.session)
+    -- parse request body
+    use('body')()
+    -- process custom routes
+    use('route')(options.routes)
+    -- handle authentication
+    use('auth')('/rpc/auth', options.session.authenticate)
+    -- RPC & REST
+    use('rest')('/rpc/')
+  }
+  -- run server
+  run layers, port, host
+
 -- export module
 return {
   use: use
   run: run
+  standard: standard
 }

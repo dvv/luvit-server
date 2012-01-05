@@ -110,7 +110,6 @@ return function(mount, options)
         }
       end
     end
-    p('PARSED', resource, method, params)
     local respond
     respond = function(err, result)
       local response = nil
@@ -155,7 +154,6 @@ return function(mount, options)
       unshift(params, context)
     end
     push(params, respond)
-    p('RPC?', params)
     return resource[method](unpack(params))
   end
 end
