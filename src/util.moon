@@ -89,27 +89,6 @@ String.unescape = (str) ->
   -- TODO: unescape HTML entities
   str
 
-String.url_decode = (str) ->
-  str = gsub str, '+', ' '
-  str = gsub str, '%%(%x%x)', (h) -> char tonumber(h,16)
-  str = gsub str, '\r\n', '\n'
-  str
-
-String.url_encode = (str) ->
-  if str
-    str = gsub str, '\n', '\r\n'
-    str = gsub str, '([^%w ])', (c) -> format '%%%02X', byte(c)
-    str = gsub str, ' ', '+'
-  str
-
-String.parse_query = (str) ->
-  allvars = {}
-  for pair in gmatch tostring(str), '[^&]+'
-    key, value = match pair, '([^=]*)=(.*)'
-    if key
-      allvars[key] = String.url_decode value
-  allvars
-
 String.split = (str, sep = '%s+', nmax) ->
   r = {}
   return r if #str <= 0
@@ -131,14 +110,12 @@ String.split = (str, sep = '%s+', nmax) ->
 -- augment string prototype
 --
 
--- 'foo' + ' bar' == 'foo bar'
-getmetatable('').__add = (s, s1) -> s .. s1
 -- nil .. 'foo' == 'nilfoo'
 getmetatable('').__concat = (a, b) -> tostring(a) .. tostring(b)
 -- 'foo #{bar}' % {bar = 'baz'} == 'foo baz'
-getmetatable('').__mod = String.interpolate
+--getmetatable('').__mod = String.interpolate
 -- 'foo bar  baz' / ' ' == {'foo', 'bar', ' baz'}
-getmetatable('').__div = String.split
+--getmetatable('').__div = String.split
 -- '!!   foo bar  baz   !!!' - '!+' == '   foo bar  baz   '
 getmetatable('').__sub = String.trim
 

@@ -1,22 +1,4 @@
-local HTTP = require('http')
-local body_parser = require('./body')()
-local _ = [[--
---
--- get remote data
---
-wget = (host, path, data, callback) ->
-  params = {
-    host: host
-    port: 80
-    path: data and path .. '?' .. data or path
-  }
-  --p(params)
-  HTTP.request params, (res) ->
-    body_parser res, nil, () ->
-      callback nil, res.body
-    res\on 'end', () ->
-      res\close()
---]]
+local Curl = require('curl')
 local sha1
 do
   local _table_0 = require('crypto')
@@ -74,24 +56,16 @@ return function(url, options)
       local provider = req.headers.referer or req.headers.referrer
       if provider and provider:find('http://loginza.ru/api/redirect?') == 1 then
         local params = {
-          host = '213.180.204.205',
-          path = '/api/authinfo?token=' .. req.body.token
+          url = 'http://loginza.ru/api/authinfo?token=' .. req.body.token,
+          proxy = true
         }
-        return HTTP.request(params, function(wget)
-          wget:on('error', function(err)
-            return p('ERRRRRRRR', err)
-          end)
-          wget:on('end', function()
-            return wget:close()
-          end)
-          return body_parser(wget, nil, function()
-            local profile = collect_data(wget.body)
-            return options.authenticate(nil, profile, function(session)
-              req.session = session
-              return res:send(302, nil, {
-                ['Location'] = '/'
-              })
-            end)
+        return Curl.get(params, function(err, data)
+          local profile = collect_data(data)
+          return options.authenticate(nil, profile, function(session)
+            req.session = session
+            return res:send(302, nil, {
+              ['Location'] = '/'
+            })
           end)
         end)
       end

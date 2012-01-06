@@ -5,6 +5,7 @@ local Http = require('http')
 local Stack = require('stack')
 local Path = require('path')
 local parse_url = require('url').parse
+local parse_query = require('querystring').parse
 Stack.errorHandler = function(req, res, err)
   if err then
     local reason = err
@@ -25,7 +26,7 @@ run = function(layers, port, host)
     res.req = req
     if not req.uri then
       req.uri = parse_url(req.url)
-      req.uri.query = req.uri.query:parse_query()
+      req.uri.query = parse_query(req.uri.query)
     end
     handler(req, res)
     return 
@@ -41,7 +42,7 @@ standard = function(port, host, options)
     use('session')(options.session),
     use('body')(),
     use('route')(options.routes),
-    use('auth')('/rpc/auth', options.session.authenticate),
+    use('auth')('/rpc/auth', options.session),
     use('rest')('/rpc/')
   }
   return run(layers, port, host)

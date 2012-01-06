@@ -83,34 +83,6 @@ end
 String.unescape = function(str)
   return str
 end
-String.url_decode = function(str)
-  str = gsub(str, '+', ' ')
-  str = gsub(str, '%%(%x%x)', function(h)
-    return char(tonumber(h, 16))
-  end)
-  str = gsub(str, '\r\n', '\n')
-  return str
-end
-String.url_encode = function(str)
-  if str then
-    str = gsub(str, '\n', '\r\n')
-    str = gsub(str, '([^%w ])', function(c)
-      return format('%%%02X', byte(c))
-    end)
-    str = gsub(str, ' ', '+')
-  end
-  return str
-end
-String.parse_query = function(str)
-  local allvars = { }
-  for pair in gmatch(tostring(str), '[^&]+') do
-    local key, value = match(pair, '([^=]*)=(.*)')
-    if key then
-      allvars[key] = String.url_decode(value)
-    end
-  end
-  return allvars
-end
 String.split = function(str, sep, nmax)
   if sep == nil then
     sep = '%s+'
@@ -134,14 +106,9 @@ String.split = function(str, sep, nmax)
   r[nf] = sub(str, ns)
   return r
 end
-getmetatable('').__add = function(s, s1)
-  return s .. s1
-end
 getmetatable('').__concat = function(a, b)
   return tostring(a) .. tostring(b)
 end
-getmetatable('').__mod = String.interpolate
-getmetatable('').__div = String.split
 getmetatable('').__sub = String.trim
 local T = require('table')
 _G.copy = function(obj)

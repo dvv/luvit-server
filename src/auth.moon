@@ -2,31 +2,12 @@
 -- Handle signin/signout
 --
 
-HTTP = require 'http'
-body_parser = require('./body')()
-
-[[--
---
--- get remote data
---
-wget = (host, path, data, callback) ->
-  params = {
-    host: host
-    port: 80
-    path: data and path .. '?' .. data or path
-  }
-  --p(params)
-  HTTP.request params, (res) ->
-    body_parser res, nil, () ->
-      callback nil, res.body
-    res\on 'end', () ->
-      res\close()
---]]
+Curl = require 'curl'
+import sha1 from require 'crypto'
 
 --
 -- collect profile data
 --
-import sha1 from require 'crypto'
 collect_data = (data) ->
   return nil if not data or not data.identity
   uid = sha1 data.identity
@@ -77,26 +58,21 @@ return (url = '/rpc/auth', options = {}) ->
       provider = req.headers.referer or req.headers.referrer
       if provider and provider\find('http://loginza.ru/api/redirect?') == 1
         params = {
-          host: '213.180.204.205' -- 'loginza.ru'
-          path: '/api/authinfo?token=' .. req.body.token
+          url: 'http://loginza.ru/api/authinfo?token=' .. req.body.token
+          proxy: true
         }
-        HTTP.request params, (wget) ->
-          -- FIXME: this doesn't catch connect errors
-          wget\on 'error', (err) ->
-            p('ERRRRRRRR', err)
-          wget\on 'end', () -> wget\close()
-          body_parser wget, nil, () ->
-            --p('GOT', wget.body)
-            profile = collect_data wget.body
-            --p('PROFILE', profile)
-            -- given profile authenticated by an openid provider, request new session
-            options.authenticate nil, profile, (session) ->
-              -- falsy session means to remove current session
-              req.session = session
-              -- go back
-              res\send 302, nil, {
-                ['Location']: '/'
-              }
+        Curl.get params, (err, data) ->
+          --p('GOT', data)
+          profile = collect_data data
+          --p('PROFILE', profile)
+          -- given profile authenticated by an openid provider, request new session
+          options.authenticate nil, profile, (session) ->
+            -- falsy session means to remove current session
+            req.session = session
+            -- go back
+            res\send 302, nil, {
+              ['Location']: '/'
+            }
 
     -- native signin/signout
     else

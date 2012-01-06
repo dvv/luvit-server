@@ -12,6 +12,7 @@ Stack = require 'stack'
 Path = require 'path'
 
 parse_url = require('url').parse
+parse_query = require('querystring').parse
 
 Stack.errorHandler = (req, res, err) ->
   if err
@@ -37,7 +38,7 @@ run = (layers, port, host) ->
     res.req = req
     if not req.uri
       req.uri = parse_url req.url
-      req.uri.query = req.uri.query\parse_query()
+      req.uri.query = parse_query req.uri.query
     -- handle request
     handler req, res
     return
@@ -61,7 +62,7 @@ standard = (port, host, options) ->
     -- process custom routes
     use('route')(options.routes)
     -- handle authentication
-    use('auth')('/rpc/auth', options.session.authenticate)
+    use('auth')('/rpc/auth', options.session)
     -- RPC & REST
     use('rest')('/rpc/')
   }

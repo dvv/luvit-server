@@ -4,40 +4,10 @@
 
 return (options = {}) ->
 
-  import concat from require 'table'
-  import decode from require 'json'
+  import parse_request from require 'curl'
 
   (req, res, continue) ->
 
-    -- collect body
-    body = {}
-    length = 0
-    req\on 'data', (chunk, len) ->
-      length = length + 1
-      body[length] = chunk
-
-    -- parse body
-    req\on 'end', () ->
-      body = concat body
-      -- first octet is [ or { ?
-      char = body\sub 1, 1
-      if char == '[' or char == '{'
-        -- body seems JSON, try to decode
-        status, result = pcall () -> decode body
-        -- decoded ok?
-        if status
-          -- set body to decoded table
-          body = result
-      -- either urlencoded or plain string
-      else
-        -- parse urlencoded
-        vars = body\parse_query()
-        -- parsed table is not empty?
-        if #keys(vars) > 0
-          -- set body to parsed table
-          body = vars
-      --
-      req.body = body
-
-      -- go on
+    parse_request req, (err, data) ->
+      req.body = data
       continue()
