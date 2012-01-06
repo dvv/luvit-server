@@ -36,26 +36,23 @@ stream_file = function(path, offset, size, progress, callback)
     local readchunk
     readchunk = function()
       local chunk_size = size < CHUNK_SIZE and size or CHUNK_SIZE
-      UV.fs_read(fd, offset, chunk_size, function(err, chunk)
+      return UV.fs_read(fd, offset, chunk_size, function(err, chunk)
         if err or #chunk == 0 then
           callback(err)
-          UV.fs_close(fd, noop)
+          return UV.fs_close(fd, noop)
         else
           chunk_size = #chunk
           offset = offset + chunk_size
           size = size - chunk_size
           if progress then
-            progress(chunk, readchunk)
+            return progress(chunk, readchunk)
           else
-            readchunk()
+            return readchunk()
           end
         end
-        return 
       end)
-      return 
     end
-    readchunk()
-    return 
+    return readchunk()
   end)
   return 
 end
@@ -63,7 +60,6 @@ return function(mount, options)
   if options == nil then
     options = { }
   end
-  local max_age = options.max_age or 0
   local parse_range
   parse_range = function(range, size)
     local partial, start, stop = false
@@ -105,7 +101,7 @@ return function(mount, options)
       self:write_head(200, headers)
     end
     if file.data then
-      self:finish(range and file.data.sub(start + 1, stop - start + 1) or file.data)
+      return self:finish(range and file.data.sub(start + 1, stop - start + 1) or file.data)
     else
       if range then
         cache_it = false
@@ -117,8 +113,7 @@ return function(mount, options)
           parts[index] = chunk
           index = index + 1
         end
-        self:write(chunk, cb)
-        return 
+        return self:write(chunk, cb)
       end
       local eof
       eof = function(err)
@@ -126,26 +121,25 @@ return function(mount, options)
         if cache_it then
           file.data = join(parts, '')
         end
-        return 
       end
-      stream_file(file.name, start, stop - start + 1, progress, eof)
+      return stream_file(file.name, start, stop - start + 1, progress, eof)
     end
-    return 
   end
-  local mount_len = #mount + 1
+  local mount_point_len = #mount + 1
+  local max_age = options.max_age or 0
   return function(req, res, continue)
     if req.method ~= 'GET' or req.url:find(mount) ~= 1 then
       return continue()
     end
-    local filename = resolve(options.directory, req.uri.pathname:sub(mount_len))
+    local filename = resolve(options.directory, req.uri.pathname:sub(mount_point_len))
     local file = cache[filename]
     if file and file.headers['Last-Modified'] == req.headers['if-modified-since'] then
       return res:serve_not_modified(file.headers)
     end
     if file then
-      serve(res, file, req.headers.range, false)
+      return serve(res, file, req.headers.range, false)
     else
-      stat(filename, function(err, stat)
+      return stat(filename, function(err, stat)
         if err then
           res:serve_not_found()
           return 
@@ -168,8 +162,6 @@ return function(mount, options)
         local cache_it = options.is_cacheable and options.is_cacheable(file)
         return serve(res, file, req.headers.range, cache_it)
       end)
-      return 
     end
-    return 
   end
 end

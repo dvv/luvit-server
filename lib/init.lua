@@ -43,7 +43,8 @@ standard = function(port, host, options)
     use('body')(),
     use('route')(options.routes),
     use('auth')('/rpc/auth', options.session),
-    use('rest')('/rpc/')
+    use('rest')('/rpc/'),
+    use('websocket')('/ws/')
   }
   return run(layers, port, host)
 end

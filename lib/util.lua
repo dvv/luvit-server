@@ -258,7 +258,7 @@ end
 local Kernel = require('kernel')
 local _defs = { }
 extend(Kernel.helpers, {
-  X = function(x)
+  X = function(x, name, filename, offset)
     if type(x) == 'function' then
       return '{{FUNCTION}}'
     end
@@ -266,7 +266,7 @@ extend(Kernel.helpers, {
       return '{{TABLE}}'
     end
     if x == nil then
-      return '{{NIL}}'
+      return '{{' .. name .. ':NIL}}'
     end
     return x
   end,

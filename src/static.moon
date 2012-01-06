@@ -34,18 +34,13 @@ stream_file = (path, offset, size, progress, callback) ->
             progress chunk, readchunk
           else
             readchunk()
-        return
-      return
     readchunk()
-    return
   return
 
 --
 -- setup request handler
 --
 return (mount, options = {}) ->
-
-  max_age = options.max_age or 0
 
   -- given Range: header, return start, end numeric pair
   parse_range = (range, size) ->
@@ -107,18 +102,16 @@ return (mount, options = {}) ->
           index = index + 1
         -- FIXME: safe
         @write(chunk, cb)
-        return
       -- eof
       eof = (err) ->
         @finish()
         if cache_it
           file.data = join parts, ''
-        return
       stream_file file.name, start, stop - start + 1, progress, eof
-    return
 
-  --
-  mount_len = #mount + 1
+  -- cache some locals
+  mount_point_len = #mount + 1
+  max_age = options.max_age or 0
 
   --
   -- request handler
@@ -131,7 +124,7 @@ return (mount, options = {}) ->
 
     -- map url to local filesystem filename
     -- TODO: Path.normalize(req.url)
-    filename = resolve options.directory, req.uri.pathname\sub(mount_len)
+    filename = resolve options.directory, req.uri.pathname\sub(mount_point_len)
 
     -- stream file, possibly caching the contents for later reuse
     file = cache[filename]
@@ -170,5 +163,3 @@ return (mount, options = {}) ->
         -- shall we cache file contents?
         cache_it = options.is_cacheable and options.is_cacheable(file)
         serve res, file, req.headers.range, cache_it
-      return
-    return

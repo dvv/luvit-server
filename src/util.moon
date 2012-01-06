@@ -253,13 +253,13 @@ _defs = {}
 
 extend Kernel.helpers, {
 
-  X: (x) ->
+  X: (x, name, filename, offset) ->
     if type(x) == 'function'
       return '{{FUNCTION}}'
     if type(x) == 'table'
       return '{{TABLE}}'
     if x == nil
-      return '{{NIL}}'
+      return '{{' .. name .. ':NIL}}'
     return x
 
   PARTIAL: (name, locals, callback) ->

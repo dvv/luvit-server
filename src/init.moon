@@ -65,6 +65,8 @@ standard = (port, host, options) ->
     use('auth')('/rpc/auth', options.session)
     -- RPC & REST
     use('rest')('/rpc/')
+    -- WebSocket
+    use('websocket')('/ws/')
   }
   -- run server
   run layers, port, host
