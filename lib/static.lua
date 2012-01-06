@@ -59,7 +59,7 @@ stream_file = function(path, offset, size, progress, callback)
   end)
   return 
 end
-return function(mount, root, options)
+return function(mount, options)
   if options == nil then
     options = { }
   end
@@ -132,12 +132,12 @@ return function(mount, root, options)
     end
     return 
   end
+  local mount_len = #mount + 1
   return function(req, res, continue)
-    local mount_found_at = req.url:find(mount)
-    if req.method ~= 'GET' or mount_found_at ~= 1 then
+    if req.method ~= 'GET' or req.url:find(mount) ~= 1 then
       return continue()
     end
-    local filename = resolve(root, req.uri.pathname:sub(mount_found_at + #mount))
+    local filename = resolve(options.directory, req.uri.pathname:sub(mount_len))
     local file = cache[filename]
     if file and file.headers['Last-Modified'] == req.headers['if-modified-since'] then
       return res:serve_not_modified(file.headers)

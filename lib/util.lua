@@ -106,9 +106,6 @@ String.split = function(str, sep, nmax)
   r[nf] = sub(str, ns)
   return r
 end
-getmetatable('').__concat = function(a, b)
-  return tostring(a) .. tostring(b)
-end
 getmetatable('').__sub = String.trim
 local T = require('table')
 _G.copy = function(obj)
@@ -261,6 +258,18 @@ end
 local Kernel = require('kernel')
 local _defs = { }
 extend(Kernel.helpers, {
+  X = function(x)
+    if type(x) == 'function' then
+      return '{{FUNCTION}}'
+    end
+    if type(x) == 'table' then
+      return '{{TABLE}}'
+    end
+    if x == nil then
+      return '{{NIL}}'
+    end
+    return x
+  end,
   PARTIAL = function(name, locals, callback)
     if not callback then
       callback = locals

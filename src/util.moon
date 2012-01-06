@@ -111,7 +111,7 @@ String.split = (str, sep = '%s+', nmax) ->
 --
 
 -- nil .. 'foo' == 'nilfoo'
-getmetatable('').__concat = (a, b) -> tostring(a) .. tostring(b)
+--getmetatable('').__concat = (a, b) -> tostring(a) .. tostring(b)
 -- 'foo #{bar}' % {bar = 'baz'} == 'foo baz'
 --getmetatable('').__mod = String.interpolate
 -- 'foo bar  baz' / ' ' == {'foo', 'bar', ' baz'}
@@ -252,6 +252,15 @@ Kernel = require 'kernel'
 _defs = {}
 
 extend Kernel.helpers, {
+
+  X: (x) ->
+    if type(x) == 'function'
+      return '{{FUNCTION}}'
+    if type(x) == 'table'
+      return '{{TABLE}}'
+    if x == nil
+      return '{{NIL}}'
+    return x
 
   PARTIAL: (name, locals, callback) ->
     if not callback

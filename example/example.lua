@@ -80,7 +80,7 @@ local options = {
 
   -- serve static files
   static = {
-    dir = __dirname .. '/public/',
+    directory = __dirname .. '/public/',
     is_cacheable = function(file) return file.size <= 65536 end,
   },
 
@@ -89,10 +89,12 @@ local options = {
     secret = 'change-me-in-production',
     -- 15 minute timeout
     ttl = 15 * 60 * 1000,
+    -- openid brokers
+    openid = true,
+    -- called to authenticate user credentials
+    authenticate = authenticate,
     -- called to get current user capabilities
     authorize = authorize,
-    -- called to authenticate credentials
-    authenticate = authenticate,
   },
 
   -- process custom routes

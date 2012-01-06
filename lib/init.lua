@@ -38,7 +38,7 @@ standard = function(port, host, options)
   extend(options, { })
   local layers = {
     use('health')(),
-    use('static')('/public/', options.static.dir, options.static),
+    use('static')('/public/', options.static),
     use('session')(options.session),
     use('body')(),
     use('route')(options.routes),

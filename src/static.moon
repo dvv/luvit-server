@@ -43,7 +43,7 @@ stream_file = (path, offset, size, progress, callback) ->
 --
 -- setup request handler
 --
-return (mount, root, options = {}) ->
+return (mount, options = {}) ->
 
   max_age = options.max_age or 0
 
@@ -118,18 +118,20 @@ return (mount, root, options = {}) ->
     return
 
   --
+  mount_len = #mount + 1
+
+  --
   -- request handler
   --
   return (req, res, continue) ->
 
     -- none of our business unless method is GET
     -- and url starts with `mount`
-    mount_found_at = req.url\find mount
-    return continue() if req.method != 'GET' or mount_found_at != 1
+    return continue() if req.method != 'GET' or req.url\find(mount) != 1
 
     -- map url to local filesystem filename
     -- TODO: Path.normalize(req.url)
-    filename = resolve root, req.uri.pathname\sub(mount_found_at + #mount)
+    filename = resolve options.directory, req.uri.pathname\sub(mount_len)
 
     -- stream file, possibly caching the contents for later reuse
     file = cache[filename]

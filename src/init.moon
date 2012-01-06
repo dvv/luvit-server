@@ -54,7 +54,7 @@ standard = (port, host, options) ->
     -- report health status to load balancer
     use('health')()
     -- serve static files
-    use('static')('/public/', options.static.dir, options.static)
+    use('static')('/public/', options.static)
     -- handle session
     use('session')(options.session)
     -- parse request body
