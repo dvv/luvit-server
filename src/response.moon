@@ -4,7 +4,7 @@
 
 Response = require 'response'
 
-import compile from require 'kernel'
+import render from require './render'
 
 noop = () ->
 

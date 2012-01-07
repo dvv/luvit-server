@@ -84,6 +84,12 @@ local options = {
     is_cacheable = function(file) return file.size <= 65536 end,
   },
 
+  -- render templates
+  render = {
+    prefix = __dirname .. '/views/',
+    suffix = '.html',
+  },
+
   -- handle session
   session = {
     secret = 'change-me-in-production',

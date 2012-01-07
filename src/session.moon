@@ -5,12 +5,12 @@
 import sub, match, format from require 'string'
 import date, time from require 'os'
 import encrypt, uncrypt, sign from require 'crypto'
-import encode, decode, null from require 'json'
+JSON = require 'json'
 
 expires_in = (ttl) -> date '%c', time() + ttl
 
 serialize = (secret, obj) ->
-  str = encode obj
+  str = JSON.stringify obj
   str_enc = encrypt secret, str
   timestamp = time()
   hmac_sig = sign secret, timestamp .. str_enc
@@ -24,8 +24,8 @@ deserialize = (secret, ttl, str) ->
   hmac_sig = sign secret, timestamp .. data
   return nil if hmac_signature != hmac_sig or timestamp + ttl <= time()
   data = uncrypt secret, data
-  data = decode data
-  data = nil if data == null
+  data = JSON.parse data
+  data = nil if data == JSON.null
   data
 
 read_session = (key, secret, ttl, req) ->

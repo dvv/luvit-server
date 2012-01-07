@@ -1,8 +1,8 @@
 local Response = require('response')
-local compile
+local render
 do
-  local _table_0 = require('kernel')
-  compile = _table_0.compile
+  local _table_0 = require('./render')
+  render = _table_0.render
 end
 local noop
 noop = function() end

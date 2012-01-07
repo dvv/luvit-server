@@ -117,7 +117,7 @@ String.split = (str, sep = '%s+', nmax) ->
 -- 'foo bar  baz' / ' ' == {'foo', 'bar', ' baz'}
 --getmetatable('').__div = String.split
 -- '!!   foo bar  baz   !!!' - '!+' == '   foo bar  baz   '
-getmetatable('').__sub = String.trim
+--getmetatable('').__sub = String.trim
 
 -----------------------------------------------------------
 --
@@ -232,90 +232,9 @@ _G.each = (t, f) ->
 _G.curry = (f, g) ->
   (...) -> f g unpack arg
 
-_G.bind111 = (f, ...) ->
-  (...) -> f g unpack arg
-
 _G.indexOf = (t, x) ->
   if type(t) == 'string'
     return find t, x, true
   for k, v in pairs(t)
     return k if v == x
   nil
-
------------------------------------------------------------
---
--- rich interpolation
---
------------------------------------------------------------
-Kernel = require 'kernel'
-
-_defs = {}
-
-extend Kernel.helpers, {
-
-  X: (x, name, filename, offset) ->
-    if type(x) == 'function'
-      return '{{FUNCTION}}'
-    if type(x) == 'table'
-      return '{{TABLE}}'
-    if x == nil
-      return '{{' .. name .. ':NIL}}'
-    return x
-
-  PARTIAL: (name, locals, callback) ->
-    if not callback
-      callback = locals
-      locals = {}
-    Kernel.compile name, (err, template) ->
-      if err
-        callback err
-      else
-        template locals, callback
-
-  IF: (condition, block, callback) ->
-    if condition
-      block {}, callback
-    else
-      callback nil, ''
-
-  LOOP: (array, block, callback) ->
-    left = 1
-    parts = {}
-    done = false
-    for i, value in ipairs array
-      left = left + 1
-      --value.index = i
-      block value, (err, result) ->
-        return if done
-        if err
-          done = true
-          return callback err
-        parts[i] = result
-        left = left - 1
-        if left == 0
-          done = true
-          callback nil, join parts
-    left = left - 1
-    if left == 0 and not done
-      done = true
-      callback nil, join parts
-
-  ESC: (value, callback) ->
-    if callback
-      callback nil, value\escape()
-    else
-      return value\escape()
-
-  DEF: (name, block, callback) ->
-    _defs[name] = block
-    callback nil, ''
-
-  USE: (name, locals, callback) ->
-    if not callback
-      callback = locals
-      locals = {}
-    _defs[name] locals, callback
-
-}
-
-_G.render = Kernel.helpers.PARTIAL

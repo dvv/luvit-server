@@ -2,8 +2,9 @@
 -- ReST resource routing
 --
 
-import sub, url_decode from require 'string'
-import encode, decode from require 'json'
+import sub from require 'string'
+import urldecode from require 'querystring'
+JSON = require 'json'
 
 return (mount = '/rpc/', options = {}) ->
 
@@ -28,9 +29,9 @@ return (mount = '/rpc/', options = {}) ->
     id = nil
     path\sub(mlen + 1)\gsub '[^/]+', (part) ->
       if not resource
-        resource = url_decode part
+        resource = urldecode part
       elseif not id
-        id = url_decode part
+        id = urldecode part
       --p('parts', resource, id)
 
     --
@@ -142,7 +143,7 @@ return (mount = '/rpc/', options = {}) ->
             ['Content-Type']: 'application/json'
           }
       --p('RPC!!', response)
-      res\write encode(response) if response
+      res\write JSON.stringify(response) if response
       res\finish()
 
     --
