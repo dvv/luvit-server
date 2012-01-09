@@ -1,13 +1,14 @@
-local sub, url_decode
+local sub
 do
   local _table_0 = require('string')
-  sub, url_decode = _table_0.sub, _table_0.url_decode
+  sub = _table_0.sub
 end
-local encode, decode
+local urldecode
 do
-  local _table_0 = require('json')
-  encode, decode = _table_0.encode, _table_0.decode
+  local _table_0 = require('querystring')
+  urldecode = _table_0.urldecode
 end
+local JSON = require('json')
 return function(mount, options)
   if mount == nil then
     mount = '/rpc/'
@@ -29,9 +30,9 @@ return function(mount, options)
     local id = nil
     path:sub(mlen + 1):gsub('[^/]+', function(part)
       if not resource then
-        resource = url_decode(part)
+        resource = urldecode(part)
       elseif not id then
-        id = url_decode(part)
+        id = urldecode(part)
       end
     end)
     local verb = req.headers['X-HTTP-Method-Override'] or req.method
@@ -138,7 +139,7 @@ return function(mount, options)
         end
       end
       if response then
-        res:write(encode(response))
+        res:write(JSON.stringify(response))
       end
       return res:finish()
     end

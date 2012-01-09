@@ -71,9 +71,23 @@ standard = (port, host, options) ->
   -- run server
   run layers, port, host
 
+
+--
+-- Application
+--
+Application = {}
+[[--require('utils').inherits Application, require('emitter')
+
+Application.prototype:setup = (options) ->
+  @options = options
+
+Application.prototype:run = (port, host) ->
+  standard port, host, @options
+--]]
+
 -- export module
 return {
   use: use
   run: run
-  standard: standard
+  Application: Application
 }

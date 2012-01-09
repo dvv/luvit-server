@@ -1,25 +1,30 @@
-local sub, match, format
-do
-  local _table_0 = require('string')
-  sub, match, format = _table_0.sub, _table_0.match, _table_0.format
-end
-local date, time
-do
-  local _table_0 = require('os')
-  date, time = _table_0.date, _table_0.time
-end
-local encrypt, uncrypt, sign
-do
-  local _table_0 = require('crypto')
-  encrypt, uncrypt, sign = _table_0.encrypt, _table_0.uncrypt, _table_0.sign
-end
+--
+-- keep sessions safely in encrypted and signed cookies.
+-- inspired by caolan/cookie-sessions
+--
+
+--
+-- Parse cookie-based session from Cookie: header
+-- into `req.session`.
+-- If session is authenticated, fill `req.context` with user capabilities
+--
+
+local String = require('string')
+local sub, match, format = String.sub, String.match, String.format
+
+local OS = require('os')
+local date, time = OS.date, OS.time
+
+local Crypto = require('crypto')
+local encrypt, uncrypt, sign = Crypto.encrypt, Crypto.uncrypt, Crypto.sign
+
 local JSON = require('json')
-local expires_in
-expires_in = function(ttl)
+
+local function expires_in(ttl)
   return date('%c', time() + ttl)
 end
-local serialize
-serialize = function(secret, obj)
+
+local function serialize(secret, obj)
   local str = JSON.stringify(obj)
   local str_enc = encrypt(secret, str)
   local timestamp = time()
@@ -27,8 +32,8 @@ serialize = function(secret, obj)
   local result = hmac_sig .. timestamp .. str_enc
   return result
 end
-local deserialize
-deserialize = function(secret, ttl, str)
+
+local function deserialize(secret, ttl, str)
   local hmac_signature = sub(str, 1, 40)
   local timestamp = tonumber(sub(str, 41, 50), 10)
   local data = sub(str, 51)
@@ -38,13 +43,11 @@ deserialize = function(secret, ttl, str)
   end
   data = uncrypt(secret, data)
   data = JSON.parse(data)
-  if data == JSON.null then
-    data = nil
-  end
+  if data == JSON.null then data = nil end
   return data
 end
-local read_session
-read_session = function(key, secret, ttl, req)
+
+local function read_session(key, secret, ttl, req)
   local cookie = type(req) == 'string' and req or req.headers.cookie
   if cookie then
     cookie = match(cookie, '%s*;*%s*' .. key .. '=(%w*)')
@@ -52,20 +55,29 @@ read_session = function(key, secret, ttl, req)
       return deserialize(secret, ttl, cookie)
     end
   end
-  return nil
 end
-return function(options)
-  if options == nil then
-    options = { }
-  end
+
+return function (options)
+
+  -- defaults
+  if options == nil then options = { } end
   local key = options.key or 'sid'
   local ttl = options.ttl or 15 * 24 * 60 * 60 * 1000
   local secret = options.secret
   local context = options.context or { }
-  return function(req, res, continue)
+
+  --
+  -- handler
+  --
+  return function (req, res, nxt)
+
+    -- read session data from request and store it in req.session
     req.session = read_session(key, secret, ttl, req)
+
+    -- patch response to support writing cookies
+    -- TODO: is there a lighter method?
     local _write_head = res.write_head
-    res.write_head = function(self, code, headers, callback)
+    res.write_head = function (self, code, headers, callback)
       local cookie = nil
       if not req.session then
         if req.headers.cookie then
@@ -74,25 +86,37 @@ return function(options)
       else
         cookie = format('%s=%s;expires=%s;httponly;path=/', key, serialize(secret, req.session), expires_in(ttl))
       end
+      -- Set-Cookie
       if cookie then
         self:add_header('Set-Cookie', cookie)
       end
-      return _write_head(self, code, headers, callback)
+      _write_head(self, code, headers, callback)
     end
+
+    -- always create a session if options.default_session specified
     if options.default_session and not req.session then
       req.session = options.default_session
     end
+
+    -- use authorization callback if specified
     if options.authorize then
-      return options.authorize(req.session, function(context)
+      -- given current session, setup request context
+      options.authorize(req.session, function (context)
         req.context = context or { }
-        return continue()
+        nxt()
       end)
+    -- assign static request context
     else
+      -- default is guest request context
       req.context = context.guest or { }
+      -- user authenticated?
       if req.session and req.session.uid and context.user then
+        -- provide user request context
         req.context = context.user
       end
-      return continue()
+      nxt()
     end
+
   end
+
 end

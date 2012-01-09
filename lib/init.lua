@@ -48,8 +48,17 @@ standard = function(port, host, options)
   }
   return run(layers, port, host)
 end
+local Application = { }
+local _ = [[--require('utils').inherits Application, require('emitter')
+
+Application.prototype:setup = (options) ->
+  @options = options
+
+Application.prototype:run = (port, host) ->
+  standard port, host, @options
+--]]
 return {
   use = use,
   run = run,
-  standard = standard
+  Application = Application
 }

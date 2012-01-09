@@ -1,4 +1,5 @@
 local Server = require('../')
+local app = Server.Application.new()
 
 --[[
  *
