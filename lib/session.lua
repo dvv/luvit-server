@@ -1,17 +1,22 @@
 local sub, match, format
 do
   local _table_0 = require('string')
-  sub, match, format = _table_0.sub, _table_0.match, _table_0.format
+  sub = _table_0.sub
+  match = _table_0.match
+  format = _table_0.format
 end
 local date, time
 do
   local _table_0 = require('os')
-  date, time = _table_0.date, _table_0.time
+  date = _table_0.date
+  time = _table_0.time
 end
 local encrypt, uncrypt, sign
 do
   local _table_0 = require('crypto')
-  encrypt, uncrypt, sign = _table_0.encrypt, _table_0.uncrypt, _table_0.sign
+  encrypt = _table_0.encrypt
+  uncrypt = _table_0.uncrypt
+  sign = _table_0.sign
 end
 local JSON = require('json')
 local expires_in

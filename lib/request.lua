@@ -2,7 +2,8 @@ local Request = require('request')
 local match, gmatch
 do
   local _table_0 = require('string')
-  match, gmatch = _table_0.match, _table_0.gmatch
+  match = _table_0.match
+  gmatch = _table_0.gmatch
 end
 Request.prototype.parse_cookies = function(self)
   self.cookies = { }

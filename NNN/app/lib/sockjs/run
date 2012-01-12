@@ -1,0 +1,10 @@
+#!/bin/sh
+exec >1 2>2
+
+RUN='venv/bin/python sockjs-protocol-dev.py -v'
+#$RUN BaseUrlGreeting IframePage SessionURLs
+#$RUN Protocol ProtocolQuirks
+$RUN XhrPolling
+#$RUN RawWebsocket WebsocketHixie76 WebsocketHttpErrors WebsocketHybi10
+#$RUN XhrStreaming EventSource HtmlFile JsonPolling 
+#$RUN ChunkingTest JSONEncoding

@@ -12,7 +12,8 @@ end
 local stat, create_read_stream
 do
   local _table_0 = require('fs')
-  stat, create_read_stream = _table_0.stat, _table_0.create_read_stream
+  stat = _table_0.stat
+  create_read_stream = _table_0.create_read_stream
 end
 local date
 do
