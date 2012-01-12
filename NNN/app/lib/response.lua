@@ -1,17 +1,14 @@
 local Response = require('response')
+local Log = require('./log')
 
 Response.prototype.auto_server = 'U-Gotta-Luvit'
 
 function Response.prototype:send(code, data, headers, close)
-  p('REQ', self.req.url, code)
-  if close == nil then close = true end
+  debug('REQ', self.req.url, code)
+  if code == 500 then p('ERR', data) end
   self:write_head(code, headers or { })
-  if data then
-    self:write(data)
-  end
-  if close then
-    self:finish()
-  end
+  if data then self:write(data) end
+  if close or close == nil then self:finish() end
 end
 
 function Response.prototype:fail(reason)
